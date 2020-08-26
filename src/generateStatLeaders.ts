@@ -1,9 +1,5 @@
 import fs from "fs";
 
-// Load pre-generated teams and league-wide pitcher, and batter stats
-import batters from "../data/batters.json";
-import pitchers from "../data/pitchers.json";
-
 // Type definitions
 interface AllTimeStatLeaders {
   [categoryType: string]: {
@@ -50,7 +46,7 @@ interface StatLeader {
 
 // Constants
 const MAX_LEADERS_PER_CATEGORY = 10;
-const TEAM_GAMES_PER_SEASON = 100;
+const TEAM_GAMES_PER_SEASON = 5;
 
 // Stat Categories
 const statCategories = getStatCategories();
@@ -59,6 +55,14 @@ function generateStatLeaders(): {
   allTimeCategoryLeaders: AllTimeStatLeaders;
   seasonLeaders: SeasonStatLeaders;
 } {
+  // Load pre-generated teams and league-wide pitcher, and batter stats
+  const batters = JSON.parse(
+    fs.readFileSync("./data/batting/batters.json", "utf8")
+  );
+  const pitchers = JSON.parse(
+    fs.readFileSync("./data/pitching/pitchers.json", "utf8")
+  );
+
   // Objects to hold stat leaders
   const seasonLeaders: SeasonStatLeaders = {};
 

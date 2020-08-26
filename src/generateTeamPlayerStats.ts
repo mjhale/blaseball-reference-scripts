@@ -1,11 +1,6 @@
 import deburr from "lodash.deburr";
 import fs from "fs";
 
-// Load pre-generated teams and league-wide pitcher, and batter stats
-import batters from "../data/batters.json";
-import pitchers from "../data/pitchers.json";
-import teams from "../data/teams.json";
-
 // Type definitions
 interface Player {
   id: string;
@@ -37,6 +32,15 @@ interface TeamStats {
 }
 
 (async () => {
+  // Load pre-generated teams and league-wide pitcher, and batter stats
+  const batters = JSON.parse(
+    fs.readFileSync("./data/batting/batters.json", "utf8")
+  );
+  const pitchers = JSON.parse(
+    fs.readFileSync("./data/pitching/pitchers.json", "utf8")
+  );
+  const teams = JSON.parse(fs.readFileSync("./data/teams.json", "utf8"));
+
   const allTeamStats: Array<TeamStats> = [];
 
   // Iterate through list of teams
@@ -46,7 +50,7 @@ interface TeamStats {
       .toLowerCase()
       .replace(/\s/g, "-");
 
-    const { _id: teamId, ...teamSpread } = team;
+    const { id: teamId, ...teamSpread } = team;
 
     // Initialize object that will store team stats
     const teamStats: TeamStats = {
