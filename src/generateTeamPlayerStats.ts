@@ -182,30 +182,29 @@ interface TeamStats {
     }
 
     // Create team folder if it does not exist
-    await fs.mkdir(`./data/teams/${teamSlug}`, { recursive: true }, (err) => {
-      if (err) throw err;
-      process.exit();
-    });
+    await fs.promises.mkdir(`./data/teams/${teamSlug}`, { recursive: true });
 
     // Output team object to json
-    const writeStream: NodeJS.WritableStream = fs.createWriteStream(
+    fs.writeFile(
       `./data/teams/${teamSlug}/playerStats.json`,
-      {
-        flags: "w",
+      `${JSON.stringify(teamStats, null, "\t")}\n`,
+      function (err) {
+        if (err) {
+          console.log(err);
+        }
       }
     );
-    writeStream.write(`${JSON.stringify(teamStats, null, "\t")}\n`);
-    writeStream.end();
 
     allTeamStats.push(teamStats);
   }
   // Output team object to json
-  const allTeamsWriteStream: NodeJS.WritableStream = fs.createWriteStream(
-    `./data/teams/teams.json`,
-    {
-      flags: "w",
+  fs.writeFile(
+    "./data/teams/teams.json",
+    `${JSON.stringify(allTeamStats, null, "\t")}\n`,
+    function (err) {
+      if (err) {
+        console.log(err);
+      }
     }
   );
-  allTeamsWriteStream.write(`${JSON.stringify(allTeamStats, null, "\t")}\n`);
-  allTeamsWriteStream.end();
 })();

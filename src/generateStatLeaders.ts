@@ -44,9 +44,13 @@ interface StatLeader {
   value: number;
 }
 
-// Constants
 const MAX_LEADERS_PER_CATEGORY = 10;
-const TEAM_GAMES_PER_SEASON = 5;
+const TEAM_GAMES_PER_SEASON: {
+  [season: number]: number;
+  [career: string]: number;
+} = {
+  career: 100,
+};
 
 // Stat Categories
 const statCategories = getStatCategories();
@@ -102,10 +106,19 @@ function generateStatLeaders(): {
         leaders: allTimeCategoryLeaders[category.type][category.id],
         player: player,
         playerStats: player.careerSeason,
+        season: "career",
       });
 
       // Update season category leaders
       for (const season in player.seasons) {
+        // Attempt to find the number of games played in a given season
+        if (
+          !Object.hasOwnProperty.call(TEAM_GAMES_PER_SEASON, season) ||
+          player.seasons[season].appearances > TEAM_GAMES_PER_SEASON[season]
+        ) {
+          TEAM_GAMES_PER_SEASON[season] = player.seasons[season].appearances;
+        }
+
         // Create season object if necessary
         if (!Object.prototype.hasOwnProperty.call(seasonLeaders, season)) {
           seasonLeaders[season] = {};
@@ -136,6 +149,7 @@ function generateStatLeaders(): {
           leaders: seasonLeaders[season][category.type][category.id],
           player: player,
           playerStats: player.seasons[season],
+          season: season,
         });
       }
     }
@@ -323,25 +337,28 @@ function updateCategoryLeaders({
   leaders,
   player,
   playerStats,
+  season,
 }: {
   category: StatCategory;
   leaders: Array<StatLeader>;
   player: Player;
   playerStats: Record<string, number>;
+  season: number | string;
 }) {
   // Exclude player if they have do not meet a minimum qualification
   if (
     category.minimumInningsPerTeamGame &&
     playerStats.inningsPitched <
-      TEAM_GAMES_PER_SEASON * category.minimumInningsPerTeamGame
+      TEAM_GAMES_PER_SEASON[season] * category.minimumInningsPerTeamGame
   ) {
     return leaders;
   }
 
   if (
     category.minimumPlateAppearancesPerTeamGame &&
-    playerStats.inningsPitched <
-      TEAM_GAMES_PER_SEASON * category.minimumPlateAppearancesPerTeamGame
+    playerStats.plateAppearances <
+      TEAM_GAMES_PER_SEASON[season] *
+        category.minimumPlateAppearancesPerTeamGame
   ) {
     return leaders;
   }
@@ -401,12 +418,7 @@ async function writeStatLeadersToJson({
   seasonLeaders,
 }) {
   // Output team object to json
-  await fs.mkdir(`./data/leaders`, { recursive: true }, (err) => {
-    if (err) {
-      console.error(err);
-      throw err;
-    }
-  });
+  await fs.promises.mkdir(`./data/leaders`, { recursive: true });
 
   const allTimeWriteStream: NodeJS.WritableStream = fs.createWriteStream(
     "./data/leaders/allTime.json"

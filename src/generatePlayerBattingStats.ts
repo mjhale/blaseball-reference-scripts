@@ -643,10 +643,7 @@ pipeline.on("end", async () => {
   // Output objects to JSON files
   await fs.promises.mkdir("./data/batting", { recursive: true });
   const batterSummariesWriteStream = fs.createWriteStream(
-    "./data/batting/batters.json",
-    {
-      flags: "a",
-    }
+    "./data/batting/batters.json"
   );
   batterSummariesWriteStream.write(
     `${JSON.stringify({ ...batterSummaries }, null, "\t")}\n`
@@ -659,10 +656,7 @@ pipeline.on("end", async () => {
       recursive: true,
     });
     const batterSummaryWriteStream = fs.createWriteStream(
-      `./data/batting/${batterSummaries[batter].slug}/summary.json`,
-      {
-        flags: "a",
-      }
+      `./data/batting/${batterSummaries[batter].slug}/summary.json`
     );
     batterSummaryWriteStream.write(
       `${JSON.stringify({ ...batterSummaries[batter] }, null, "\t")}\n`
@@ -677,8 +671,6 @@ pipeline.on("end", async () => {
   );
   playerListWriteStream.write(`${JSON.stringify(playerList, null, "\t")}\n`);
   playerListWriteStream.end();
-
-  console.log("done");
 });
 
 function calculateBattingAverage(stats) {

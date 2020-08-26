@@ -661,10 +661,7 @@ pipeline.on("end", async () => {
   // Output objects to JSON files
   await fs.promises.mkdir("./data/pitching", { recursive: true });
   const pitcherSummariesWriteStream = fs.createWriteStream(
-    "./data/pitching/pitchers.json",
-    {
-      flags: "a",
-    }
+    "./data/pitching/pitchers.json"
   );
   pitcherSummariesWriteStream.write(
     `${JSON.stringify({ ...pitcherSummaries }, null, "\t")}\n`
@@ -680,10 +677,7 @@ pipeline.on("end", async () => {
       recursive: true,
     });
     const pitcherSummaryWriteStream = fs.createWriteStream(
-      `./data/pitching/${encodedPitcherName}/summary.json`,
-      {
-        flags: "a",
-      }
+      `./data/pitching/${encodedPitcherName}/summary.json`
     );
     pitcherSummaryWriteStream.write(
       `${JSON.stringify({ ...pitcherSummaries[pitcher] }, null, "\t")}\n`
@@ -698,9 +692,6 @@ pipeline.on("end", async () => {
   );
   playerListWriteStream.write(`${JSON.stringify(playerList, null, "\t")}\n`);
   playerListWriteStream.end();
-
-  // console.dir(pitcherSummaries, { depth: null });
-  console.log("done");
 });
 
 function calculateBasesOnBallsPerNine(stats) {
