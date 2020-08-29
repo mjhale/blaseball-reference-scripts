@@ -43,6 +43,10 @@ const playerList: Array<Player> = [];
 // Maintain a copy of the previous game state update
 let prevGameStates: any = null;
 
+pipeline.on("error", (error) => {
+  console.log(error);
+});
+
 // Process game feed logs
 pipeline.on("data", (gameDataUpdate) => {
   const currGameStates = gameDataUpdate.schedule;

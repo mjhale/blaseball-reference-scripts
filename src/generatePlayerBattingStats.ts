@@ -44,6 +44,10 @@ let prevGameStates: any = null;
 // Maintain a list of seen batters by game id
 const seenBatters = {};
 
+pipeline.on("error", (error) => {
+  console.log(error);
+});
+
 // Process game feed logs
 pipeline.on("data", (gameDataUpdate) => {
   const currGameStates = gameDataUpdate.schedule;

@@ -32,7 +32,7 @@ echo "Generating stat leaders..."
 node dist/generateStatLeaders.js
 
 echo "Copying generated data to Blaseball Reference S3 bucket..."
-s3cmd put --quiet --recursive --acl-public --content-type="application/json" --add-header="Cache-Control: max-age=900" ./data/* s3://blaseball-reference/public/json-data/
+s3cmd put --quiet --no-mime-magic --recursive --acl-public --add-header="Content-Type: application/json" --add-header="Cache-Control: max-age=900" ./data/* s3://blaseball-reference/public/json-data/
 
 echo "Cleaning up..."
 rm -r ./tmp/
