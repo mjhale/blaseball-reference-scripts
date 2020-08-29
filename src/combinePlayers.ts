@@ -27,9 +27,10 @@ async function combinePlayers() {
   }
 
   await Promise.all(
-    chunk([...playerIds], 100).map(async (ids) => {
-      const url = new URL("https://www.blaseball.com/database/players");
-      url.searchParams.set("ids", ids.join(","));
+    chunk([...playerIds], 25).map(async (ids) => {
+      const url = new URL(
+        `https://www.blaseball.com/database/players?ids=${ids.join(",")}`
+      );
 
       await limiter.schedule(async () => {
         const response = await fetch(url);
