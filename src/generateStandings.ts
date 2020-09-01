@@ -1,7 +1,7 @@
 import Bottleneck from "bottleneck";
-// import chunk from "lodash.chunk";
 import fetch from "node-fetch";
 import fs from "fs";
+import merge from "deepmerge";
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
 
@@ -202,35 +202,33 @@ async function generateStandings() {
 
   const GAMES_IN_SEASON = 99;
 
-  let games;
-  let season;
-  let day;
+  let games = {};
+  let startingSeason;
+  let startingDay;
 
   try {
     games = await JSON.parse(
       fs.readFileSync("./data/gameResults.json", "utf8")
     );
 
-    season = Number(Object.keys(games).sort().pop());
-    day = Number(Object.keys(games[season]).sort().pop());
+    startingSeason = Number(Object.keys(games).sort().pop());
+    startingDay = Number(Object.keys(games[startingSeason]).sort().pop());
   } catch {
-    games = {};
-
-    season = 0;
-    day = 0;
+    startingSeason = 0;
+    startingDay = 0;
   }
 
   const newGames = await fetchGameResults({
-    startingDay: day,
-    startingSeason: season,
+    startingDay,
+    startingSeason,
   });
 
-  games = { ...games, ...newGames };
+  games = merge(games, newGames);
 
   for (const season in games) {
     for (const day in games[season]) {
       for (const game of games[season][day]) {
-        // Fitler out games in progress
+        // Filter out games in progress
         if (game.gameComplete === false) break;
 
         // Filter out postseason games
