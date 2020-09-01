@@ -1,5 +1,5 @@
 import Bottleneck from "bottleneck";
-import fetch from "@adobe/node-fetch-retry";
+import { fetchData } from "./utils";
 import fs from "fs";
 import merge from "deepmerge";
 
@@ -124,7 +124,7 @@ async function fetchGameResults({
   const url = new URL("https://www.blaseball.com/database/games");
   url.searchParams.set("season", season.toString());
   url.searchParams.set("day", day.toString());
-  let games = await limiter.schedule(getData, url);
+  let games = await limiter.schedule(fetchData, url.toString());
   let hasActiveGame = false;
 
   // Create fetch loop to iterate through all days in a season until reaching an empty array
@@ -157,7 +157,7 @@ async function fetchGameResults({
     const url = new URL("https://www.blaseball.com/database/games");
     url.searchParams.set("season", season.toString());
     url.searchParams.set("day", day.toString());
-    games = await limiter.schedule(getData, url);
+    games = await limiter.schedule(fetchData, url.toString());
 
     // When at the end of a season, try to jump to next season
     if (Array.isArray(games) && games.length === 0) {
@@ -168,7 +168,7 @@ async function fetchGameResults({
       const url = new URL("https://www.blaseball.com/database/games");
       url.searchParams.set("season", season.toString());
       url.searchParams.set("day", day.toString());
-      games = await limiter.schedule(getData, url);
+      games = await limiter.schedule(fetchData, url.toString());
     }
   }
 
@@ -873,16 +873,16 @@ async function fetchSubleaguesAndDivisions(): Promise<{
   }
 
   const ILB_ID = "d8545021-e9fc-48a3-af74-48685950a183";
-  const resp = await fetch(
+  const league: any = await limiter.schedule(
+    fetchData,
     `https://blaseball.com/database/league?id=${ILB_ID}`
   );
-  const league = await resp.json();
 
   for (const subleagueId of league.subleagues) {
-    const resp = await fetch(
+    const subleague: any = await limiter.schedule(
+      fetchData,
       `https://blaseball.com/database/subleague?id=${subleagueId}`
     );
-    const subleague = await resp.json();
 
     subleagues[subleague.id] = {
       divisions: subleague.divisions,
@@ -892,10 +892,10 @@ async function fetchSubleaguesAndDivisions(): Promise<{
     };
 
     for (const divisionId of subleague.divisions) {
-      const resp = await fetch(
+      const division: any = await limiter.schedule(
+        fetchData,
         `https://blaseball.com/database/division?id=${divisionId}`
       );
-      const division = await resp.json();
 
       subleagues[subleague.id].teams = [
         ...subleagues[subleague.id].teams,
@@ -978,20 +978,6 @@ function getWeather() {
       name: "Reverb",
     },
   ];
-}
-
-async function getData(link) {
-  const request = await fetch(link, {
-    retryOptions: {
-      retryOnHttpResponse: function (response) {
-        if (response.status >= 500 || response.status >= 400) {
-          return true;
-        }
-      },
-    },
-  });
-  const response = await request.json();
-  return response;
 }
 
 main();

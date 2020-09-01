@@ -1,9 +1,9 @@
 import Bottleneck from "bottleneck";
 import chunk from "lodash.chunk";
-import fetch from "node-fetch";
+import { fetchData } from "./utils";
 import fs from "fs";
 
-const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
+const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1000 });
 
 async function combinePlayers() {
   const pitchers = JSON.parse(
@@ -28,28 +28,32 @@ async function combinePlayers() {
 
   await Promise.all(
     chunk([...playerIds], 25).map(async (ids) => {
-      const url = new URL(
-        `https://www.blaseball.com/database/players?ids=${ids.join(",")}`
-      );
+      let fetchedPlayers: Array<any>;
 
-      await limiter.schedule(async () => {
-        const response = await fetch(url);
-        const fetchedPlayers = await response.json();
+      try {
+        fetchedPlayers = await limiter.schedule(
+          fetchData,
+          `https://www.blaseball.com/database/players?ids=${ids.join(",")}`
+        );
+        console.log(`Fetched data for ${fetchedPlayers.length} players...`);
+      } catch (err) {
+        console.log(err);
+        return Promise.reject(new Error(err.type));
+      }
 
-        for (const player of fetchedPlayers) {
-          players[player.id] = {
-            ...players[player.id],
-            armor: player.armor,
-            bat: player.bat,
-            blood: player.blood,
-            isIncinerated:
-              players[player.id].isIncinerated !== player.deceased
-                ? player.deceased
-                : players[player.id].isIncinerated,
-            ritual: player.ritual,
-          };
-        }
-      });
+      for (const player of fetchedPlayers) {
+        players[player.id] = {
+          ...players[player.id],
+          armor: player.armor,
+          bat: player.bat,
+          blood: player.blood,
+          isIncinerated:
+            players[player.id].isIncinerated !== player.deceased
+              ? player.deceased
+              : players[player.id].isIncinerated,
+          ritual: player.ritual,
+        };
+      }
     })
   );
 
