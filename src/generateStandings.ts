@@ -1,5 +1,5 @@
 import Bottleneck from "bottleneck";
-import fetch from "node-fetch";
+import fetch from "@adobe/node-fetch-retry";
 import fs from "fs";
 import merge from "deepmerge";
 
@@ -108,84 +108,69 @@ function main() {
   generateStandings();
 }
 
+type GameResults = { [seasonId: string]: { [day: number]: Array<unknown> } };
 async function fetchGameResults({
   startingDay,
   startingSeason,
 }: {
   startingDay: number;
   startingSeason: number;
-}): Promise<{ [seasonId: string]: { [day: number]: Array<any> } }> {
+}): Promise<GameResults> {
   let season = startingSeason;
   let day = startingDay;
 
-  const gameResults: { [seasonId: string]: { [day: number]: Array<any> } } = {};
+  const gameResults: GameResults = {};
 
   const url = new URL("https://www.blaseball.com/database/games");
   url.searchParams.set("season", season.toString());
   url.searchParams.set("day", day.toString());
+  let games = await limiter.schedule(getData, url);
+  let hasActiveGame = false;
 
-  await limiter.schedule(async () => {
-    let response = await fetch(url);
-    let games = await response.json();
-    let hasActiveGame = false;
+  // Create fetch loop to iterate through all days in a season until reaching an empty array
+  while (!hasActiveGame && Array.isArray(games) && games.length !== 0) {
+    console.log(`Fetched game results for season ${season} day ${day}`);
 
-    // Iterate through all days in a season until reaching an empty array response
-    while (!hasActiveGame && Array.isArray(games) && games.length !== 0) {
-      console.log(`Fetched results for season ${season} day ${day}`);
-
-      for (const game of games) {
-        // Stop fetching games when reaching in-progress games
-        // - Exclude season 3 due to some games being incorrectly marked as not complete
-        if (Number(game.season) !== 3 && game.gameComplete === false) {
-          hasActiveGame = true;
-
-          break;
-        }
-      }
-
-      if (hasActiveGame) {
+    // Break out of fetch loop if in-progress games are found
+    // - Exclude season 3 due to some games incorrectly marked as not complete
+    for (const game of games) {
+      if (Number(game.season) !== 3 && game.gameComplete === false) {
+        hasActiveGame = true;
         break;
       }
+    }
+    if (hasActiveGame) {
+      break;
+    }
 
-      if (!Object.hasOwnProperty.call(gameResults, season)) {
-        gameResults[season] = {};
-      }
-      if (!Object.hasOwnProperty.call(gameResults[season], day)) {
-        gameResults[season][day] = games;
-      }
+    // Store game results of day
+    if (!Object.hasOwnProperty.call(gameResults, season)) {
+      gameResults[season] = {};
+    }
+    if (!Object.hasOwnProperty.call(gameResults[season], day)) {
+      gameResults[season][day] = games;
+    }
 
-      day += 1;
+    day += 1;
+
+    // Begin new fetch loop
+    const url = new URL("https://www.blaseball.com/database/games");
+    url.searchParams.set("season", season.toString());
+    url.searchParams.set("day", day.toString());
+    games = await limiter.schedule(getData, url);
+
+    // When at the end of a season, try to jump to next season
+    if (Array.isArray(games) && games.length === 0) {
+      season += 1;
+      day = 0;
+
+      // Begin new fetch loop
       const url = new URL("https://www.blaseball.com/database/games");
       url.searchParams.set("season", season.toString());
       url.searchParams.set("day", day.toString());
-
-      try {
-        response = await fetch(url);
-        games = await response.json();
-      } catch (err) {
-        console.log(err);
-        break;
-      }
-
-      // When at the end of a season, begin iteration on next season
-      if (Array.isArray(games) && games.length === 0) {
-        season += 1;
-        day = 0;
-
-        const url = new URL("https://www.blaseball.com/database/games");
-        url.searchParams.set("season", season.toString());
-        url.searchParams.set("day", day.toString());
-
-        try {
-          response = await fetch(url);
-          games = await response.json();
-        } catch (err) {
-          console.log(err);
-          break;
-        }
-      }
+      games = await limiter.schedule(getData, url);
     }
-  });
+  }
 
   return gameResults;
 }
@@ -211,15 +196,23 @@ async function generateStandings() {
       fs.readFileSync("./data/gameResults.json", "utf8")
     );
 
-    startingSeason = Number(Object.keys(games).sort().pop());
-    startingDay = Number(Object.keys(games[startingSeason]).sort().pop());
-  } catch {
+    startingSeason = Object.keys(games)
+      .map((season) => Number(season))
+      .sort((a, b) => a - b)
+      .pop();
+
+    startingDay = Object.keys(games[startingSeason])
+      .map((day) => Number(day))
+      .sort((a, b) => a - b)
+      .pop();
+  } catch (err) {
+    console.log(err);
     startingSeason = 0;
     startingDay = 0;
   }
 
   const newGames = await fetchGameResults({
-    startingDay,
+    startingDay: startingDay + 1,
     startingSeason,
   });
 
@@ -985,6 +978,20 @@ function getWeather() {
       name: "Reverb",
     },
   ];
+}
+
+async function getData(link) {
+  const request = await fetch(link, {
+    retryOptions: {
+      retryOnHttpResponse: function (response) {
+        if (response.status >= 500 || response.status >= 400) {
+          return true;
+        }
+      },
+    },
+  });
+  const response = await request.json();
+  return response;
 }
 
 main();
