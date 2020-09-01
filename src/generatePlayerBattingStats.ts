@@ -7,6 +7,7 @@
 import fs from "fs";
 import ndjson from "ndjson";
 import deburr from "lodash.deburr";
+import hash from "object-hash";
 
 interface Player {
   aliases: Array<string | null>;
@@ -38,6 +39,9 @@ const pipeline = fs.createReadStream(gameDataUpdatesFile).pipe(ndjson.parse());
 const batterSummaries = {};
 const playerList: any = [];
 
+// Maintain hashes for each game state update to avoid duplicate updates
+const gameStateHashes = {};
+
 // Maintain a copy of the previous game state update
 let prevGameStates: any = null;
 
@@ -63,6 +67,15 @@ pipeline.on("data", (gameDataUpdate) => {
   // Ignore update if it's identical to previous tick
   if (JSON.stringify(currGameStates) === JSON.stringify(prevGameStates)) {
     return;
+  }
+
+  // Ignore duplicate game states
+  const currGameStateHash = hash(currGameStates);
+  if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
+    console.log(`Duplicate ${currGameStateHash} hash found ----`);
+    return;
+  } else {
+    gameStateHashes[currGameStateHash] = currGameStateHash;
   }
 
   // Iterate through each game in current tick
@@ -92,6 +105,15 @@ pipeline.on("data", (gameDataUpdate) => {
       return;
     }
 
+    // Ignore duplicate game states
+    const currGameStateHash = hash(gameState);
+    if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
+      console.log(`Duplicate ${currGameStateHash} hash found ----`);
+      return;
+    } else {
+      gameStateHashes[currGameStateHash] = currGameStateHash;
+    }
+
     // Helper variables for various stat tracking scenarios
     const currBatter = gameState.topOfInning
       ? gameState.awayBatter
@@ -99,6 +121,12 @@ pipeline.on("data", (gameDataUpdate) => {
     const currBatterName = gameState.topOfInning
       ? gameState.awayBatterName
       : gameState.homeBatterName;
+    const currBatterTeamId = gameState.topOfInning
+      ? gameState.awayTeam
+      : gameState.homeTeam;
+    const currBatterTeamName = gameState.topOfInning
+      ? gameState.awayTeamName
+      : gameState.homeTeamName;
     const prevBatter =
       prevGameState &&
       (prevGameState.topOfInning
@@ -109,6 +137,16 @@ pipeline.on("data", (gameDataUpdate) => {
       (prevGameState.topOfInning
         ? prevGameState.awayBatterName
         : prevGameState.homeBatterName);
+    const prevBatterTeamId =
+      prevGameState &&
+      (prevGameState.topOfInning
+        ? prevGameState.awayTeam
+        : prevGameState.homeTeam);
+    const prevBatterTeamName =
+      prevGameState &&
+      (prevGameState.topOfInning
+        ? prevGameState.awayTeamName
+        : prevGameState.homeTeamName);
 
     // Create initial summary objects if batter hasn't been previously seen
     if (
@@ -133,7 +171,9 @@ pipeline.on("data", (gameDataUpdate) => {
 
     // Add player to player list
     if (currBatter) {
-      if (playerList.find((p) => p.id === currBatter) === undefined) {
+      const player = playerList.find((p) => p.id === currBatter);
+
+      if (!player) {
         playerList.push(
           createPlayerObject({
             initialValues: { id: currBatter, name: currBatterName },
@@ -141,27 +181,23 @@ pipeline.on("data", (gameDataUpdate) => {
           })
         );
       } else {
-        const player: any = playerList.find((p) => p.id === currBatter);
-
-        if (player) {
-          if (currBatterName !== player.name) {
-            if (!player.aliases.find((a) => a === player.name)) {
-              player.aliases.push(player.name);
-            }
-
-            player.name = currBatterName;
+        if (currBatterName !== player.name) {
+          if (!player.aliases.find((a) => a === player.name)) {
+            player.aliases.push(player.name);
           }
 
-          player.currentTeamId = gameState.topOfInning
-            ? gameState.awayTeam
-            : gameState.homeTeam;
-          player.currentTeamName = gameState.topOfInning
-            ? gameState.awayTeamName
-            : gameState.homeTeamName;
-          player.lastGameDay = gameState.day;
-          player.lastGameId = gameState.id;
-          player.lastGameSeason = gameState.season;
+          player.name = currBatterName;
         }
+
+        player.currentTeamId = gameState.topOfInning
+          ? gameState.awayTeam
+          : gameState.homeTeam;
+        player.currentTeamName = gameState.topOfInning
+          ? gameState.awayTeamName
+          : gameState.homeTeamName;
+        player.lastGameDay = gameState.day;
+        player.lastGameId = gameState.id;
+        player.lastGameSeason = gameState.season;
       }
     }
 
@@ -225,28 +261,36 @@ pipeline.on("data", (gameDataUpdate) => {
 
     // Add player's starting team to season data
     // @TODO: Account for batter moving teams during the season
-    if (currBatterSummary && currBatterSummary.team === null) {
-      currBatterSummary.team = gameState.topOfInning
-        ? gameState.awayTeam
-        : gameState.homeTeam;
+    if (
+      currBatterSummary &&
+      (currBatterSummary.team === null ||
+        currBatterSummary.team !== currBatterTeamId)
+    ) {
+      currBatterSummary.team = currBatterTeamId;
     }
 
-    if (currBatterSummary && currBatterSummary.teamName === null) {
-      currBatterSummary.teamName = gameState.topOfInning
-        ? gameState.awayTeamName
-        : gameState.homeTeamName;
+    if (
+      currBatterSummary &&
+      (currBatterSummary.teamName === null ||
+        currBatterSummary.teamName !== currBatterTeamName)
+    ) {
+      currBatterSummary.teamName = currBatterTeamName;
     }
 
-    if (prevBatterSummary && prevBatterSummary.team === null) {
-      prevBatterSummary.team = prevGameState.topOfInning
-        ? prevGameState.awayTeam
-        : prevGameState.homeTeam;
+    if (
+      prevBatterSummary &&
+      (prevBatterSummary.team === null ||
+        prevBatterSummary.team !== prevBatterTeamId)
+    ) {
+      prevBatterSummary.team = prevBatterTeamId;
     }
 
-    if (prevBatterSummary && prevBatterSummary.teamName === null) {
-      prevBatterSummary.teamName = prevGameState.topOfInning
-        ? prevGameState.awayTeamName
-        : prevGameState.homeTeamName;
+    if (
+      prevBatterSummary &&
+      (prevBatterSummary.teamName === null ||
+        prevBatterSummary.teamName !== prevBatterTeamName)
+    ) {
+      prevBatterSummary.teamName = prevBatterTeamName;
     }
 
     // Increment appearances

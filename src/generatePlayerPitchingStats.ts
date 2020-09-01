@@ -9,6 +9,7 @@
 import fs from "fs";
 import ndjson from "ndjson";
 import deburr from "lodash.deburr";
+import hash from "object-hash";
 
 interface Player {
   aliases: Array<string | null>;
@@ -40,6 +41,9 @@ const pipeline = fs.createReadStream(gameDataUpdatesFile).pipe(ndjson.parse());
 const pitcherSummaries: any = {};
 const playerList: Array<Player> = [];
 
+// Maintain hashes for each game state update to avoid duplicate updates
+const gameStateHashes = {};
+
 // Maintain a copy of the previous game state update
 let prevGameStates: any = null;
 
@@ -62,6 +66,15 @@ pipeline.on("data", (gameDataUpdate) => {
   // Ignore update if it's identical to previous tick
   if (JSON.stringify(currGameStates) === JSON.stringify(prevGameStates)) {
     return;
+  }
+
+  // Ignore duplicate game states
+  const currGameStateHash = hash(currGameStates);
+  if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
+    console.log(`Duplicate ${currGameStateHash} hash found ----`);
+    return;
+  } else {
+    gameStateHashes[currGameStateHash] = currGameStateHash;
   }
 
   // Iterate through each game in current tick
@@ -91,15 +104,49 @@ pipeline.on("data", (gameDataUpdate) => {
       return;
     }
 
+    // Ignore duplicate game states
+    const currGameStateHash = hash(gameState);
+    if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
+      console.log(`Duplicate ${currGameStateHash} hash found ----`);
+      return;
+    } else {
+      gameStateHashes[currGameStateHash] = currGameStateHash;
+    }
+
     // Helper variables for various stat tracking scenarios
     const currPitcher = gameState.topOfInning
       ? gameState.homePitcher
       : gameState.awayPitcher;
+    const currPitcherName = gameState.topOfInning
+      ? gameState.homePitcherName
+      : gameState.awayPitcherName;
+    const currPitcherTeamId = gameState.topOfInning
+      ? gameState.homeTeam
+      : gameState.awayTeam;
+    const currPitcherTeamName = gameState.topOfInning
+      ? gameState.homeTeamName
+      : gameState.awayTeamName;
     const prevPitcher =
       prevGameState &&
       (prevGameState.topOfInning
         ? prevGameState.homePitcher
         : prevGameState.awayPitcher);
+    const prevPitcherName =
+      prevGameState &&
+      (gameState.topOfInning
+        ? gameState.homePitcherName
+        : gameState.awayPitcherName);
+    const prevPitcherTeamId =
+      prevGameState &&
+      (prevGameState.topOfInning
+        ? prevGameState.homeTeam
+        : prevGameState.awayTeam);
+    const prevPitcherTeamName =
+      prevGameState &&
+      (prevGameState.topOfInning
+        ? prevGameState.homeTeamName
+        : prevGameState.awayTeamName);
+
     const awayPitcher = gameState && gameState.awayPitcher;
     const homePitcher = gameState && gameState.homePitcher;
 
@@ -142,7 +189,9 @@ pipeline.on("data", (gameDataUpdate) => {
     }
 
     // Add player to player list
-    if (playerList.find((p) => p.id === currPitcher) === undefined) {
+    const player = playerList.find((p) => p.id === currPitcher);
+
+    if (!player) {
       playerList.push(
         createPlayerObject({
           initialValues: {
@@ -155,31 +204,19 @@ pipeline.on("data", (gameDataUpdate) => {
         })
       );
     } else {
-      const player = playerList.find((p) => p.id === currPitcher);
-
-      if (player) {
-        const currPitcherName = gameState.topOfInning
-          ? gameState.homePitcherName
-          : gameState.awayPitcherName;
-
-        if (currPitcherName !== player.name) {
-          if (!player.aliases.find((a) => a === player.name)) {
-            player.aliases.push(player.name);
-          }
-
-          player.name = currPitcherName;
+      if (currPitcherName !== player.name) {
+        if (!player.aliases.find((a) => a === player.name)) {
+          player.aliases.push(player.name);
         }
 
-        player.currentTeamId = gameState.topOfInning
-          ? gameState.homeTeam
-          : gameState.awayTeam;
-        player.currentTeamName = gameState.topOfInning
-          ? gameState.homeTeamName
-          : gameState.awayTeamName;
-        player.lastGameDay = gameState.day;
-        player.lastGameId = gameState.id;
-        player.lastGameSeason = gameState.season;
+        player.name = currPitcherName;
       }
+
+      player.currentTeamId = currPitcherTeamId;
+      player.currentTeamName = currPitcherTeamName;
+      player.lastGameDay = gameState.day;
+      player.lastGameId = gameState.id;
+      player.lastGameSeason = gameState.season;
     }
 
     if (currPitcher !== awayPitcher) {
