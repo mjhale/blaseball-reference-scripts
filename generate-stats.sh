@@ -1,4 +1,5 @@
 #!/bin/bash
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 S3_LOGS_ARCHIVE=s3://blaseball-archive-iliana/
 
