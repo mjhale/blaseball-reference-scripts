@@ -673,15 +673,18 @@ async function generateStandings() {
           GAMES_IN_SEASON + 1 - sortedLeague[i].wins - sortedLeague[4].losses;
 
         sortedLeague[i].magicNumber =
-          magicNumber <= 0 ? "-" : String(magicNumber);
+          magicNumber <= 0 ? "X" : String(magicNumber);
         sortedLeague[i].clinched = magicNumber <= 0 ? true : false;
+        sortedLeague[i].eliminationNumber = "-";
       }
 
       for (let i = 4; i < sortedLeague.length; i++) {
         const tragicNumber =
           GAMES_IN_SEASON + 1 - sortedLeague[3].wins - sortedLeague[i].losses;
 
-        sortedLeague[i].eliminationNumber = String(tragicNumber);
+        sortedLeague[i].magicNumber = "-";
+        sortedLeague[i].eliminationNumber =
+          tragicNumber <= 0 ? "E" : String(tragicNumber);
       }
 
       const leadingTeamWinDifferential =

@@ -3,7 +3,7 @@ import fetch from "@adobe/node-fetch-retry";
 export async function fetchData(link: string): Promise<any> {
   const request = await fetch(link, {
     retryOptions: {
-      retryMaxDuration: 300000,
+      retryMaxDuration: 60000,
       retryInitialDelay: 2000,
       retryOnHttpResponse: function (response) {
         if (response.status >= 500 || response.status >= 400) {

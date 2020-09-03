@@ -1,12 +1,12 @@
-#!/bin/bash
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+#! /usr/bin/env bash
 
 S3_LOGS_ARCHIVE=s3://blaseball-archive-iliana/
+S3_BLASEBALL_REF_ARCHIVE=s3://blaseball-reference/public/json-data/
 
 mkdir -p ./data ./blaseball-logs ./tmp
 
 echo "Pulling game update logs from S3..."
-aws --quiet --no-sign-request s3 sync $S3_LOGS_ARCHIVE ./blaseball-logs/ --exclude "hourly/*" --exclude "compressed-hourly/*"
+/usr/local/bin/aws --quiet --no-sign-request s3 sync $S3_LOGS_ARCHIVE ./blaseball-logs/ --exclude "hourly/*" --exclude "compressed-hourly/*"
 
 echo "Combining logs..."
 cat ./blaseball-logs/*.gz > ./tmp/combined-blaseball-log.json.gz
@@ -36,7 +36,7 @@ echo "Generating standing tables..."
 node dist/generateStandings.js
 
 echo "Copying generated data to Blaseball Reference S3 bucket..."
-s3cmd put --quiet --no-mime-magic --recursive --acl-public --add-header="Content-Type: application/json" --add-header="Cache-Control: max-age=900" ./data/* s3://blaseball-reference/public/json-data/
+/usr/local/bin/s3cmd put --quiet --no-mime-magic --recursive --acl-public --no-preserve --add-header="Content-Type: application/json" --add-header="Cache-Control: max-age=30" ./data/* $S3_BLASEBALL_REF_ARCHIVE
 
 echo "Cleaning up..."
 rm -r ./tmp/

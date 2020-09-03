@@ -17,6 +17,10 @@ async function combinePlayers() {
   const players: Record<string, any> = {};
 
   for (const player of [...pitchers, ...batters]) {
+    if (player.id === null) {
+      continue;
+    }
+
     playerIds.add(player.id);
 
     if (!Object.hasOwnProperty.call(players, player.id)) {
@@ -26,18 +30,22 @@ async function combinePlayers() {
     }
   }
 
-  await Promise.all(
-    chunk([...playerIds], 25).map(async (ids) => {
+  await Promise.allSettled(
+    chunk(Array.from(playerIds), 100).map(async (ids) => {
       let fetchedPlayers: Array<any>;
 
       try {
         fetchedPlayers = await limiter.schedule(
           fetchData,
-          `https://www.blaseball.com/database/players?ids=${ids.join(",")}`
+          `https://www.blaseball.com/database/players?ids=${ids
+            .filter((id) => id !== null)
+            .join(",")}`
         );
-        console.log(`Fetched data for ${fetchedPlayers.length} players...`);
+        console.log(
+          `Fetched latest data for ${fetchedPlayers.length} players...`
+        );
       } catch (err) {
-        console.log(err);
+        console.log(`Fetch error with IDs: ${Array.from(ids).join(", ")}...`);
         return Promise.reject(new Error(err.type));
       }
 
@@ -54,6 +62,8 @@ async function combinePlayers() {
           ritual: player.ritual,
         };
       }
+
+      return Promise.resolve();
     })
   );
 

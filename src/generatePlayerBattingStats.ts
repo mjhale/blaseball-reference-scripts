@@ -33,7 +33,9 @@ interface Player {
 
 // Location of feed archive
 const gameDataUpdatesFile = "./tmp/blaseball-log.json";
-const pipeline = fs.createReadStream(gameDataUpdatesFile).pipe(ndjson.parse());
+const pipeline = fs
+  .createReadStream(gameDataUpdatesFile)
+  .pipe(ndjson.parse({ strict: false }));
 
 // Create initial player object and stat object
 const batterSummaries = {};
@@ -72,7 +74,9 @@ pipeline.on("data", (gameDataUpdate) => {
   // Ignore duplicate game states
   const currGameStateHash = hash(currGameStates);
   if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
-    console.log(`Duplicate ${currGameStateHash} hash found ----`);
+    console.log(`Duplicate game states found with hash ${currGameStateHash}`);
+
+    prevGameStates = currGameStates;
     return;
   } else {
     gameStateHashes[currGameStateHash] = currGameStateHash;
@@ -108,7 +112,7 @@ pipeline.on("data", (gameDataUpdate) => {
     // Ignore duplicate game states
     const currGameStateHash = hash(gameState);
     if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
-      console.log(`Duplicate ${currGameStateHash} hash found ----`);
+      console.log(`Duplicate game state found from game ${gameState.id}`);
       return;
     } else {
       gameStateHashes[currGameStateHash] = currGameStateHash;
@@ -325,6 +329,13 @@ pipeline.on("data", (gameDataUpdate) => {
       ) !== null
     ) {
       prevBatterSummary.atBats += 1;
+
+      if (
+        prevGameState.basesOccupied.includes(1) ||
+        prevGameState.basesOccupied.includes(2)
+      ) {
+        prevBatterSummary.atBatsWithRunnersInScoringPosition += 1;
+      }
     }
 
     // Increment runs batted in
@@ -419,6 +430,13 @@ pipeline.on("data", (gameDataUpdate) => {
     // Increment hits
     if (prevBatterSummary && gameState.lastUpdate.match(/(hits a)/i) !== null) {
       prevBatterSummary.hits += 1;
+
+      if (
+        prevGameState.basesOccupied.includes(1) ||
+        prevGameState.basesOccupied.includes(2)
+      ) {
+        prevBatterSummary.hitsWithRunnersInScoringPosition += 1;
+      }
     }
 
     // Increment doubles hit
@@ -590,6 +608,9 @@ pipeline.on("end", async () => {
 
       // Calculate non-tally based season stats
       seasonStats.battingAverage = calculateBattingAverage(seasonStats);
+      seasonStats.battingAverageWithRunnersInScoringPosition = calculateBattingAverageWithRunnersInScoringPosition(
+        seasonStats
+      );
       seasonStats.onBasePercentage = calculateOnBasePercentage(seasonStats);
       seasonStats.sluggingPercentage = calculateSluggingPercentage(seasonStats);
       seasonStats.totalBases = calculateTotalBases(seasonStats);
@@ -600,8 +621,12 @@ pipeline.on("end", async () => {
       careerSeasonData.appearances += seasonStats.appearances;
       careerSeasonData.plateAppearances += seasonStats.plateAppearances;
       careerSeasonData.atBats += seasonStats.atBats;
+      careerSeasonData.atBatsWithRunnersInScoringPosition +=
+        seasonStats.atBatsWithRunnersInScoringPosition;
       careerSeasonData.runsScored += seasonStats.runsScored;
       careerSeasonData.hits += seasonStats.hits;
+      careerSeasonData.hitsWithRunnersInScoringPosition +=
+        seasonStats.hitsWithRunnersInScoringPosition;
       careerSeasonData.doublesHit += seasonStats.doublesHit;
       careerSeasonData.triplesHit += seasonStats.triplesHit;
       careerSeasonData.homeRunsHit += seasonStats.homeRunsHit;
@@ -622,6 +647,9 @@ pipeline.on("end", async () => {
 
       // Calculate non-tally based postseason stats
       postseasonStats.battingAverage = calculateBattingAverage(postseasonStats);
+      postseasonStats.battingAverageWithRunnersInScoringPosition = calculateBattingAverageWithRunnersInScoringPosition(
+        postseasonStats
+      );
       postseasonStats.onBasePercentage = calculateOnBasePercentage(
         postseasonStats
       );
@@ -638,8 +666,12 @@ pipeline.on("end", async () => {
       careerPostseasonData.appearances += postseasonStats.appearances;
       careerPostseasonData.plateAppearances += postseasonStats.plateAppearances;
       careerPostseasonData.atBats += postseasonStats.atBats;
+      careerPostseasonData.atBatsWithRunnersInScoringPosition +=
+        postseasonStats.atBatsWithRunnersInScoringPosition;
       careerPostseasonData.runsScored += postseasonStats.runsScored;
       careerPostseasonData.hits += postseasonStats.hits;
+      careerPostseasonData.hitsWithRunnersInScoringPosition +=
+        postseasonStats.hitsWithRunnersInScoringPosition;
       careerPostseasonData.doublesHit += postseasonStats.doublesHit;
       careerPostseasonData.triplesHit += postseasonStats.triplesHit;
       careerPostseasonData.homeRunsHit += postseasonStats.homeRunsHit;
@@ -658,6 +690,9 @@ pipeline.on("end", async () => {
     // Calculate non-tally based career season stats
     // careerSeasonData.basesOnBallsPerNine = calculateBasesOnBallsPerNine(careerSeasonData);
     careerSeasonData.battingAverage = calculateBattingAverage(careerSeasonData);
+    careerSeasonData.battingAverageWithRunnersInScoringPosition = calculateBattingAverageWithRunnersInScoringPosition(
+      careerSeasonData
+    );
     careerSeasonData.onBasePercentage = calculateOnBasePercentage(
       careerSeasonData
     );
@@ -673,6 +708,9 @@ pipeline.on("end", async () => {
     // Calculate non-tally based postcareer season stats
     // careerPostseasonData.basesOnBallsPerNine = calculateBasesOnBallsPerNine(careerPostseasonData);
     careerPostseasonData.battingAverage = calculateBattingAverage(
+      careerPostseasonData
+    );
+    careerPostseasonData.battingAverageWithRunnersInScoringPosition = calculateBattingAverageWithRunnersInScoringPosition(
       careerPostseasonData
     );
     careerPostseasonData.onBasePercentage = calculateOnBasePercentage(
@@ -723,6 +761,13 @@ pipeline.on("end", async () => {
 
 function calculateBattingAverage(stats) {
   return stats.atBats > 0 ? stats.hits / stats.atBats : 0;
+}
+
+function calculateBattingAverageWithRunnersInScoringPosition(stats) {
+  return stats.atBatsWithRunnersInScoringPosition > 0
+    ? stats.hitsWithRunnersInScoringPosition /
+        stats.atBatsWithRunnersInScoringPosition
+    : 0;
 }
 
 function calculateOnBasePercentage(stats) {
@@ -824,12 +869,15 @@ function initialBatterStatsObject(initialValues = {}) {
   const defaults = {
     appearances: 0,
     atBats: 0,
+    atBatsWithRunnersInScoringPosition: 0,
     basesOnBalls: 0,
     battingAverage: 0,
+    battingAverageWithRunnersInScoringPosition: 0,
     caughtStealing: 0,
     doublesHit: 0,
     groundIntoDoublePlays: 0,
     hits: 0,
+    hitsWithRunnersInScoringPosition: 0,
     homeRunsHit: 0,
     onBasePercentage: 0,
     onBasePlusSlugging: 0,

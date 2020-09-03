@@ -35,7 +35,9 @@ interface Player {
 
 // Location of feed archive
 const gameDataUpdatesFile = "./tmp/blaseball-log.json";
-const pipeline = fs.createReadStream(gameDataUpdatesFile).pipe(ndjson.parse());
+const pipeline = fs
+  .createReadStream(gameDataUpdatesFile)
+  .pipe(ndjson.parse({ strict: false }));
 
 // Maintain objects of all pitcher summaries and general info
 const pitcherSummaries: any = {};
@@ -49,6 +51,7 @@ let prevGameStates: any = null;
 
 pipeline.on("error", (error) => {
   console.log(error);
+  return;
 });
 
 // Process game feed logs
@@ -71,7 +74,9 @@ pipeline.on("data", (gameDataUpdate) => {
   // Ignore duplicate game states
   const currGameStateHash = hash(currGameStates);
   if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
-    console.log(`Duplicate ${currGameStateHash} hash found ----`);
+    console.log(`Duplicate game states found with hash ${currGameStateHash}`);
+
+    prevGameStates = currGameStates;
     return;
   } else {
     gameStateHashes[currGameStateHash] = currGameStateHash;
@@ -79,6 +84,10 @@ pipeline.on("data", (gameDataUpdate) => {
 
   // Iterate through each game in current tick
   currGameStates.forEach((gameState) => {
+    if (!gameState) {
+      return;
+    }
+
     // Normalize ID field to account for old archives and new archives (_id and id)
     if (!gameState.hasOwnProperty("id") && gameState.hasOwnProperty("_id")) {
       gameState.id = gameState._id;
@@ -95,7 +104,7 @@ pipeline.on("data", (gameDataUpdate) => {
     }
 
     // Ignores games that were marked as completed in last tick
-    if (gameState.gameComplete && prevGameState.gameComplete) {
+    if (prevGameState && gameState.gameComplete && prevGameState.gameComplete) {
       return;
     }
 
@@ -107,7 +116,7 @@ pipeline.on("data", (gameDataUpdate) => {
     // Ignore duplicate game states
     const currGameStateHash = hash(gameState);
     if (Object.hasOwnProperty.call(gameStateHashes, currGameStateHash)) {
-      console.log(`Duplicate ${currGameStateHash} hash found ----`);
+      console.log(`Duplicate game state found from game ${gameState.id}`);
       return;
     } else {
       gameStateHashes[currGameStateHash] = currGameStateHash;
@@ -402,19 +411,25 @@ pipeline.on("data", (gameDataUpdate) => {
       homePitcherSummary.appearances += 1;
     }
 
-    // Increment innings pitched
-    // @TODO: Account for mid-game pitcher changes
-    // @TODO: Recheck logic for end of game summation?
+    // Increment outs recorded
     if (
-      (prevGameState &&
-        prevGameState.halfInningOuts === 2 &&
-        gameState.halfInningOuts === 0) ||
-      gameState.lastUpdate.match(/Game Over/i) !== null
+      prevGameState &&
+      gameState.lastUpdate.match(
+        /(hit a|hit into|strikes out|struck out|caught stealing|fielder's choice|sacrifice)/i
+      ) !== null
     ) {
-      prevPitcherSummary.inningsPitched += 1;
+      prevPitcherSummary.outsRecorded += 1;
     }
 
-    // @TODO: Increment number of pitches
+    // Increment pitch count
+    if (
+      prevGameState &&
+      gameState.lastUpdate.match(
+        /(hit a|hit into|hits|foul ball|draws a|game over|strikes out|struck out|reaches|steals|caught stealing|fielder's choice|sacrifice)/i
+      ) !== null
+    ) {
+      prevPitcherSummary.pitchCount += 1;
+    }
 
     // Increment wins and losses
     // @TODO: Account for mid-game pitcher changes
@@ -520,7 +535,7 @@ pipeline.on("data", (gameDataUpdate) => {
         awayPitcherSummary.qualityStarts += 1;
       }
 
-      if (gameState.homeScore <= 3) {
+      if (gameState.awayScore <= 3) {
         homePitcherSummary.qualityStarts += 1;
       }
     }
@@ -558,6 +573,7 @@ pipeline.on("end", async () => {
       const seasonStats = pitcherSummaries[pitcher].seasons[season];
 
       // Calculate non-tally based season stats
+      seasonStats.inningsPitched = calculateInningsPitched(seasonStats); // Keep above stats dependent on IP
       seasonStats.basesOnBallsPerNine = calculateBasesOnBallsPerNine(
         seasonStats
       );
@@ -579,12 +595,13 @@ pipeline.on("end", async () => {
       careerSeasonData.wins += seasonStats.wins;
       careerSeasonData.losses += seasonStats.losses;
       careerSeasonData.appearances += seasonStats.appearances;
-      careerSeasonData.inningsPitched += seasonStats.inningsPitched;
+      careerSeasonData.outsRecorded += seasonStats.outsRecorded;
       careerSeasonData.shutouts += seasonStats.shutouts;
       careerSeasonData.hitsAllowed += seasonStats.hitsAllowed;
       careerSeasonData.homeRuns += seasonStats.homeRuns;
       careerSeasonData.earnedRuns += seasonStats.earnedRuns;
       careerSeasonData.basesOnBalls += seasonStats.basesOnBalls;
+      careerSeasonData.pitchCount += seasonStats.pitchCount;
       careerSeasonData.strikeouts += seasonStats.strikeouts;
       careerSeasonData.battersFaced += seasonStats.battersFaced;
       careerSeasonData.qualityStarts += seasonStats.qualityStarts;
@@ -596,6 +613,7 @@ pipeline.on("end", async () => {
       const postseasonStats = pitcherSummaries[pitcher].postseasons[postseason];
 
       // Calculate non-tally based postseason stats
+      postseasonStats.inningsPitched = calculateInningsPitched(postseasonStats); // Keep above stats dependent on IP
       postseasonStats.basesOnBallsPerNine = calculateBasesOnBallsPerNine(
         postseasonStats
       );
@@ -627,11 +645,12 @@ pipeline.on("end", async () => {
       careerPostseasonData.wins += postseasonStats.wins;
       careerPostseasonData.losses += postseasonStats.losses;
       careerPostseasonData.appearances += postseasonStats.appearances;
-      careerPostseasonData.inningsPitched += postseasonStats.inningsPitched;
+      careerPostseasonData.outsRecorded += postseasonStats.outsRecorded;
       careerPostseasonData.shutouts += postseasonStats.shutouts;
       careerPostseasonData.hitsAllowed += postseasonStats.hitsAllowed;
       careerPostseasonData.homeRuns += postseasonStats.homeRuns;
       careerPostseasonData.earnedRuns += postseasonStats.earnedRuns;
+      careerPostseasonData.pitchCount += postseasonStats.pitchCount;
       careerPostseasonData.basesOnBalls += postseasonStats.basesOnBalls;
       careerPostseasonData.strikeouts += postseasonStats.strikeouts;
       careerPostseasonData.battersFaced += postseasonStats.battersFaced;
@@ -641,6 +660,7 @@ pipeline.on("end", async () => {
     });
 
     // Calculate non-tally based career season stats
+    careerSeasonData.inningsPitched = calculateInningsPitched(careerSeasonData); // Keep above stats dependent on IP
     careerSeasonData.basesOnBallsPerNine = calculateBasesOnBallsPerNine(
       careerSeasonData
     );
@@ -669,6 +689,9 @@ pipeline.on("end", async () => {
     );
 
     // Calculate non-tally based postcareer season stats
+    careerPostseasonData.inningsPitched = calculateInningsPitched(
+      careerPostseasonData
+    ); // Keep above stats dependent on IP
     careerPostseasonData.basesOnBallsPerNine = calculateBasesOnBallsPerNine(
       careerPostseasonData
     );
@@ -757,6 +780,12 @@ function calculateHomeRunsPerNine(stats) {
   return stats.inningsPitched > 0
     ? (stats.homeRuns / stats.inningsPitched) * 9
     : 0;
+}
+
+function calculateInningsPitched(stats) {
+  const partialOuts = (stats.outsRecorded % 3) / 10;
+
+  return Math.trunc(stats.outsRecorded / 3) + partialOuts;
 }
 
 function calculateStrikeoutToWalkRatio(stats) {
@@ -863,7 +892,8 @@ function initialPitcherStatsObject(initialValues = {}) {
     homeRunsPerNine: 0,
     inningsPitched: 0,
     losses: 0,
-    numberOfPitches: 0,
+    outsRecorded: 0,
+    pitchCount: 0,
     qualityStarts: 0,
     shutouts: 0,
     strikeouts: 0,

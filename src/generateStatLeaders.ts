@@ -7,14 +7,45 @@ interface AllTimeStatLeaders {
   };
 }
 
-interface Player {
-  careerSeason: Record<string, number>;
-  id: string;
-  name: string;
-  seasons: { [season: string]: Record<string, number> };
-  slug: string;
+interface StatCollection {
+  appearances: number;
+  battersFaced: number;
+  basesOnBalls: number;
+  basesOnBallsPerNine: number;
+  earnedRuns: number;
+  earnedRunAverage: number;
+  flyouts: number;
+  groundouts: number;
+  hitsAllowed: number;
+  hitsAllowedPerNine: number;
+  homeRuns: number;
+  homeRunsPerNine: number;
+  inningsPitched: number;
+  losses: number;
+  numberOfPitches: number;
+  plateAppearances: number;
+  qualityStarts: number;
+  shutouts: number;
+  strikeouts: number;
+  strikeoutToWalkRatio: number;
+  strikeoutsPerNine: number;
+  strikeoutRate: number;
   team: string;
   teamName: string;
+  walksAndHitsPerInningPitched: number;
+  walkRate: number;
+  winningPercentage: number;
+  wins: number;
+}
+
+interface Player {
+  careerSeason: StatCollection;
+  id: string;
+  name: string;
+  seasons: {
+    [season: string]: StatCollection;
+  };
+  slug: string;
 }
 
 interface SeasonStatLeaders {
@@ -169,12 +200,26 @@ function getStatCategories() {
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
+      abbreviation: "HRISP",
+      id: "hitsWithRunnersInScoringPosition",
+      name: "Hits With Runners in Scoring Position",
+      sort: "desc",
+    },
+    {
+      abbreviation: "BB",
+      id: "basesOnBalls",
+      name: "Walks",
+      sort: "desc",
+    },
+    { abbreviation: "2B", id: "doublesHit", name: "Doubles Hit", sort: "desc" },
+    { abbreviation: "3B", id: "triplesHit", name: "Triples Hit", sort: "desc" },
+    { abbreviation: "TB", id: "totalBases", name: "Total Bases", sort: "desc" },
+    {
       abbreviation: "CS",
       id: "caughtStealing",
       name: "Caught Stealing",
       sort: "desc",
     },
-    { abbreviation: "2B", id: "doublesHit", name: "Doubles Hit", sort: "desc" },
     {
       abbreviation: "GDP",
       id: "groundIntoDoublePlays",
@@ -196,6 +241,12 @@ function getStatCategories() {
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
+      abbreviation: "R",
+      id: "runsScored",
+      name: "Runs Scored",
+      sort: "desc",
+    },
+    {
       abbreviation: "RBI",
       id: "runsBattedIn",
       name: "Runs Batted In",
@@ -214,8 +265,19 @@ function getStatCategories() {
       name: "Stolen Bases",
       sort: "desc",
     },
+    {
+      abbreviation: "SF",
+      id: "sacrificeFlies",
+      name: "Sacrifice Flies",
+      sort: "desc",
+    },
+    {
+      abbreviation: "SH",
+      id: "sacrificeBunts",
+      name: "Sacrifice Bunts",
+      sort: "desc",
+    },
     { abbreviation: "SO", id: "strikeouts", name: "Strikeouts", sort: "desc" },
-    { abbreviation: "3B", id: "triplesHit", name: "Triples Hit", sort: "desc" },
   ];
 
   const pitcherStatCategories: Array<StatCategory> = [
@@ -273,6 +335,12 @@ function getStatCategories() {
       sort: "desc",
     },
     { abbreviation: "L", id: "losses", name: "Losses", sort: "desc" },
+    {
+      abbreviation: "P",
+      id: "pitchCount",
+      name: "Pitches Thrown",
+      sort: "desc",
+    },
     {
       abbreviation: "QS",
       id: "qualityStarts",
@@ -342,7 +410,7 @@ function updateCategoryLeaders({
   category: StatCategory;
   leaders: Array<StatLeader>;
   player: Player;
-  playerStats: Record<string, number>;
+  playerStats: StatCollection;
   season: number | string;
 }) {
   // Exclude player if they have do not meet a minimum qualification
@@ -369,8 +437,8 @@ function updateCategoryLeaders({
       playerId: player.id,
       playerName: player.name,
       playerSlug: player.slug,
-      team: player.team,
-      teamName: player.teamName,
+      team: playerStats.team,
+      teamName: playerStats.teamName,
       value: playerStats[category.id],
     });
   } else {
@@ -392,8 +460,8 @@ function updateCategoryLeaders({
             playerId: player.id,
             playerName: player.name,
             playerSlug: player.slug,
-            team: player.team,
-            teamName: player.teamName,
+            team: playerStats.team,
+            teamName: playerStats.teamName,
             value: playerStats[category.id],
           },
           ...end,
