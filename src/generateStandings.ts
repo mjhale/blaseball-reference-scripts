@@ -125,31 +125,32 @@ async function fetchGameResults({
   url.searchParams.set("season", season.toString());
   url.searchParams.set("day", day.toString());
   let games = await limiter.schedule(fetchData, url.toString());
-  let hasActiveGame = false;
+  // let hasActiveGame = false;
 
   // Create fetch loop to iterate through all days in a season until reaching an empty array
-  while (!hasActiveGame && Array.isArray(games) && games.length !== 0) {
+  while (Array.isArray(games) && games.length !== 0) {
     console.log(`Fetched game results for season ${season} day ${day}`);
 
-    // Break out of fetch loop if in-progress games are found
-    // - Exclude season 3 due to some games incorrectly marked as not complete
-    for (const game of games) {
-      if (Number(game.season) !== 3 && game.gameComplete === false) {
-        hasActiveGame = true;
-        break;
-      }
-    }
-    if (hasActiveGame) {
-      break;
-    }
+    // // Break out of fetch loop if in-progress games are found
+    // // - Exclude season 3 due to some games incorrectly marked as not complete
+    // for (const game of games) {
+    //   if (Number(game.season) !== 3 && game.gameComplete === false) {
+    //     hasActiveGame = true;
+    //     break;
+    //   }
+    // }
+    // if (hasActiveGame) {
+    //   break;
+    // }
 
     // Store game results of day
     if (!Object.hasOwnProperty.call(gameResults, season)) {
       gameResults[season] = {};
     }
     if (!Object.hasOwnProperty.call(gameResults[season], day)) {
-      gameResults[season][day] = games;
+      gameResults[season][day] = [];
     }
+    gameResults[season][day] = games;
 
     day += 1;
 
@@ -201,10 +202,25 @@ async function generateStandings() {
       .sort((a, b) => a - b)
       .pop();
 
-    startingDay = Object.keys(games[startingSeason])
+    const sortedStartingSeasonDays = Object.keys(games[startingSeason])
       .map((day) => Number(day))
-      .sort((a, b) => a - b)
-      .pop();
+      .sort((a, b) => a - b);
+
+    for (const day of sortedStartingSeasonDays) {
+      let hasActiveGames = false;
+
+      for (const game of games[startingSeason][day]) {
+        if (game.gameComplete === false) {
+          hasActiveGames = true;
+        }
+      }
+
+      if (hasActiveGames) {
+        break;
+      } else {
+        startingDay = day;
+      }
+    }
   } catch (err) {
     console.log(err);
     startingSeason = 0;
@@ -216,7 +232,9 @@ async function generateStandings() {
     startingSeason,
   });
 
-  games = merge(games, newGames);
+  games = merge(games, newGames, {
+    arrayMerge: (destinationArray, sourceArray, options) => sourceArray,
+  });
 
   for (const season in games) {
     for (const day in games[season]) {
@@ -840,8 +858,6 @@ async function fetchSubleaguesAndDivisions(): Promise<{
   subleagues: Array<Subleague>;
   divisions: Array<Division>;
 }> {
-  const subleagues: { [subleagueId: string]: Subleague } = {};
-  const divisions: { [divisionId: string]: Division } = {};
   let hasCachedResponse;
   let response;
 
@@ -874,6 +890,9 @@ async function fetchSubleaguesAndDivisions(): Promise<{
   if (hasCachedResponse && response) {
     return response;
   }
+
+  const subleagues: { [subleagueId: string]: Subleague } = response.subleagues;
+  const divisions: { [divisionId: string]: Division } = response.divisions;
 
   const ILB_ID = "d8545021-e9fc-48a3-af74-48685950a183";
   const league: any = await limiter.schedule(
