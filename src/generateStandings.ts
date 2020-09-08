@@ -108,6 +108,15 @@ function main() {
   generateStandings();
 }
 
+const subleaguesBySeason = {
+  "0": ["The Good League", "The Evil League"],
+  "1": ["The Good League", "The Evil League"],
+  "2": ["The Good League", "The Evil League"],
+  "3": ["The Good League", "The Evil League"],
+  "4": ["The Good League", "The Evil League"],
+  "5": ["The Mild League", "The Wild League"],
+};
+
 type GameResults = { [seasonId: string]: { [day: number]: Array<unknown> } };
 async function fetchGameResults({
   startingDay,
@@ -250,34 +259,54 @@ async function generateStandings() {
         const loser: "away" | "home" =
           game.homeScore > game.awayScore ? "away" : "home";
 
-        const winnerSubleague: Subleague | undefined = subleagues.find(
-          (subleague) => {
+        const winnerSubleague: Subleague | undefined = subleagues
+          .filter((subleague) => {
+            return subleaguesBySeason[game.season].find(
+              (currSeasonSubleagueName) => {
+                return currSeasonSubleagueName === subleague.name;
+              }
+            );
+          })
+          .find((subleague) => {
             return subleague.teams.find(
               (team) => team === game[`${winner}Team`]
             );
-          }
-        );
-        const loserSubleague: Subleague | undefined = subleagues.find(
-          (subleague) => {
+          });
+
+        const loserSubleague: Subleague | undefined = subleagues
+          .filter((subleague) => {
+            return subleaguesBySeason[game.season].find(
+              (currSeasonSubleagueName) => {
+                return currSeasonSubleagueName === subleague.name;
+              }
+            );
+          })
+          .find((subleague) => {
             return subleague.teams.find(
               (team) => team === game[`${loser}Team`]
             );
-          }
-        );
+          });
 
-        const winnerDivision: Division | undefined = divisions.find(
-          (division) => {
-            return division.teams.find(
-              (team) => team === game[`${winner}Team`]
-            );
-          }
-        );
+        const currSeasonDivisions: Array<string> = [
+          ...(winnerSubleague?.divisions || []),
+          ...(loserSubleague?.divisions || []),
+        ];
 
-        const loserDivision: Division | undefined = divisions.find(
-          (division) => {
-            return division.teams.find((team) => team === game[`${loser}Team`]);
-          }
-        );
+        const winnerDivision:
+          | Division
+          | undefined = divisions
+          .filter((division) => currSeasonDivisions.includes(division.id))
+          .find((division) =>
+            division.teams.find((team) => team === game[`${winner}Team`])
+          );
+
+        const loserDivision:
+          | Division
+          | undefined = divisions
+          .filter((division) => currSeasonDivisions.includes(division.id))
+          .find((division) =>
+            division.teams.find((team) => team === game[`${loser}Team`])
+          );
 
         // Attempt to locate existing team records
         let winningTeamRecords = teamRecords.find(
