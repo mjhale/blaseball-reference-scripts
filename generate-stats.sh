@@ -35,6 +35,9 @@ node dist/generateStatLeaders.js
 echo "Generating standing tables..."
 node dist/generateStandings.js
 
+echo "Generating schedule files..."
+node dist/generateSchedules.js
+
 echo "Copying generated data to Blaseball Reference S3 bucket..."
 /usr/local/bin/s3cmd put --quiet --no-mime-magic --recursive --acl-public --no-preserve --add-header="Content-Type: application/json" --add-header="Cache-Control: max-age=30" ./data/* $S3_BLASEBALL_REF_ARCHIVE
 

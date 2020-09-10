@@ -1,5 +1,6 @@
 import Bottleneck from "bottleneck";
 import { fetchData } from "./utils";
+import fetchGameResults from "./fetchGameResults";
 import fs from "fs";
 import merge from "deepmerge";
 
@@ -116,74 +117,6 @@ const subleaguesBySeason = {
   "4": ["The Good League", "The Evil League"],
   "5": ["The Mild League", "The Wild League"],
 };
-
-type GameResults = { [seasonId: string]: { [day: number]: Array<unknown> } };
-async function fetchGameResults({
-  startingDay,
-  startingSeason,
-}: {
-  startingDay: number;
-  startingSeason: number;
-}): Promise<GameResults> {
-  let season = startingSeason;
-  let day = startingDay;
-
-  const gameResults: GameResults = {};
-
-  const url = new URL("https://www.blaseball.com/database/games");
-  url.searchParams.set("season", season.toString());
-  url.searchParams.set("day", day.toString());
-  let games = await limiter.schedule(fetchData, url.toString());
-  // let hasActiveGame = false;
-
-  // Create fetch loop to iterate through all days in a season until reaching an empty array
-  while (Array.isArray(games) && games.length !== 0) {
-    console.log(`Fetched game results for season ${season} day ${day}`);
-
-    // // Break out of fetch loop if in-progress games are found
-    // // - Exclude season 3 due to some games incorrectly marked as not complete
-    // for (const game of games) {
-    //   if (Number(game.season) !== 3 && game.gameComplete === false) {
-    //     hasActiveGame = true;
-    //     break;
-    //   }
-    // }
-    // if (hasActiveGame) {
-    //   break;
-    // }
-
-    // Store game results of day
-    if (!Object.hasOwnProperty.call(gameResults, season)) {
-      gameResults[season] = {};
-    }
-    if (!Object.hasOwnProperty.call(gameResults[season], day)) {
-      gameResults[season][day] = [];
-    }
-    gameResults[season][day] = games;
-
-    day += 1;
-
-    // Begin new fetch loop
-    const url = new URL("https://www.blaseball.com/database/games");
-    url.searchParams.set("season", season.toString());
-    url.searchParams.set("day", day.toString());
-    games = await limiter.schedule(fetchData, url.toString());
-
-    // When at the end of a season, try to jump to next season
-    if (Array.isArray(games) && games.length === 0) {
-      season += 1;
-      day = 0;
-
-      // Begin new fetch loop
-      const url = new URL("https://www.blaseball.com/database/games");
-      url.searchParams.set("season", season.toString());
-      url.searchParams.set("day", day.toString());
-      games = await limiter.schedule(fetchData, url.toString());
-    }
-  }
-
-  return gameResults;
-}
 
 async function generateStandings() {
   const { divisions, subleagues } = await fetchSubleaguesAndDivisions();
