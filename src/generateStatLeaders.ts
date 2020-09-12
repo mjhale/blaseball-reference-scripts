@@ -447,8 +447,8 @@ function updateCategoryLeaders({
       const leader = leaders[i];
 
       if (
-        (category.sort === "asc" && playerStats[category.id] < leader.value) ||
-        (category.sort === "desc" && playerStats[category.id] > leader.value)
+        (category.sort === "asc" && playerStats[category.id] <= leader.value) ||
+        (category.sort === "desc" && playerStats[category.id] >= leader.value)
       ) {
         const start = leaders.slice(0, i);
         const end = leaders.slice(i);
