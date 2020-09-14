@@ -116,6 +116,11 @@ const subleaguesBySeason = {
   "3": ["The Good League", "The Evil League"],
   "4": ["The Good League", "The Evil League"],
   "5": ["The Mild League", "The Wild League"],
+  "6": ["The Mild League", "The Wild League"],
+  "7": ["The Mild League", "The Wild League"],
+  "8": ["The Mild League", "The Wild League"],
+  "9": ["The Mild League", "The Wild League"],
+  "10": ["The Mild League", "The Wild League"],
 };
 
 async function generateStandings() {
@@ -170,7 +175,7 @@ async function generateStandings() {
   }
 
   const newGames = await fetchGameResults({
-    startingDay: startingDay + 1,
+    startingDay: startingDay,
     startingSeason,
   });
 
