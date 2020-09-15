@@ -7,8 +7,11 @@
 import fs from "fs";
 import ndjson from "ndjson";
 import deburr from "lodash.deburr";
+import dotenv from "dotenv";
 import hash from "object-hash";
 import merge from "deepmerge";
+
+dotenv.config();
 
 interface Player {
   aliases: Array<string | null>;
@@ -34,20 +37,29 @@ interface Player {
 
 // Fetch current season number to limit processing to current season only
 let standingsBySeason;
-let mostRecentSeason = 0;
+let generateStatsFromSeason = 0;
 
-try {
-  standingsBySeason = JSON.parse(
-    fs.readFileSync("./data/standings/standings.json", "utf8")
-  );
+function getMostRecentSeasonFromStandings() {
+  try {
+    standingsBySeason = JSON.parse(
+      fs.readFileSync("./data/standings/standings.json", "utf8")
+    );
 
-  mostRecentSeason = Number(
-    Object.keys(standingsBySeason)
-      .sort((a, b) => Number(a) - Number(b))
-      .pop()
-  );
-} catch (error) {
-  console.log(error);
+    generateStatsFromSeason = Number(
+      Object.keys(standingsBySeason)
+        .sort((a, b) => Number(a) - Number(b))
+        .pop()
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+getMostRecentSeasonFromStandings();
+
+// Override most recent season based on FROM_SEASON env var
+if (process.env.FROM_SEASON !== undefined) {
+  generateStatsFromSeason = Number(process.env.FROM_SEASON);
 }
 
 // Location of feed archive
@@ -57,7 +69,7 @@ const pipeline = fs
   .pipe(ndjson.parse({ strict: false }));
 
 // Create initial player object and stat object
-const batterSummaries = {};
+let batterSummaries = {};
 const playerList: any = [];
 
 // Maintain hashes for each game state update to avoid duplicate updates
@@ -77,7 +89,7 @@ pipeline.on("error", (error) => {
 pipeline.on("data", (gameDataUpdate) => {
   if (
     gameDataUpdate?.sim?.season &&
-    gameDataUpdate.sim.season !== mostRecentSeason
+    gameDataUpdate.sim.season < generateStatsFromSeason
   ) {
     return;
   }
@@ -341,7 +353,7 @@ pipeline.on("data", (gameDataUpdate) => {
     if (
       prevBatterSummary &&
       gameState.lastUpdate.match(
-        /(hits a|hit into|fielder's choice|strikes out|struck out|ground out|flyout|sacrifice|draws a walk)/i
+        /(hits a|hit into|fielder's choice|strikes out|struck out|ground out|flyout|sacrifice|draws a walk|with a pitch)/i
       ) !== null
     ) {
       prevBatterSummary.plateAppearances += 1;
@@ -490,8 +502,19 @@ pipeline.on("data", (gameDataUpdate) => {
     }
 
     // Increment bases on balls
-    if (prevBatterSummary && gameState.lastUpdate.match(/(walk)/i) !== null) {
+    if (
+      prevBatterSummary &&
+      gameState.lastUpdate.match(/(walk|with a pitch)/i) !== null
+    ) {
       prevBatterSummary.basesOnBalls += 1;
+    }
+
+    // Increment hit by pitches
+    if (
+      prevBatterSummary &&
+      gameState.lastUpdate.match(/with a pitch/i) !== null
+    ) {
+      prevBatterSummary.hitByPitches += 1;
     }
 
     // Increment strikeouts
@@ -630,11 +653,15 @@ pipeline.on("end", async () => {
       fs.readFileSync("./data/batting/batters.json", "utf8")
     );
   } catch (error) {
+    existingBatterSummaries = null;
     console.log(error);
   }
 
   Object.keys(batterSummaries).forEach((batter) => {
-    if (Object.hasOwnProperty.call(existingBatterSummaries, batter)) {
+    if (
+      existingBatterSummaries &&
+      Object.hasOwnProperty.call(existingBatterSummaries, batter)
+    ) {
       batterSummaries[batter] = merge(
         existingBatterSummaries[batter],
         batterSummaries[batter],
@@ -642,24 +669,28 @@ pipeline.on("end", async () => {
           customMerge: (key) => {
             if (key === "seasons" || key === "postseasons") {
               return (a, b) => {
-                // Only process most recent season recorded
-                const bMostRecentSeason = Object.keys(b)
-                  .sort((a, b) => Number(a) - Number(b))
-                  .pop();
+                // Only overwrite existing data with tracked seasons
+                let trackedSeasons = {};
 
-                if (!bMostRecentSeason) {
-                  return a;
+                for (const season of Object.keys(b).sort(
+                  (a, b) => Number(a) - Number(b)
+                )) {
+                  if (Number(season) >= generateStatsFromSeason) {
+                    trackedSeasons = { ...trackedSeasons, [season]: b[season] };
+                  }
                 }
 
                 return {
                   ...a,
-                  [bMostRecentSeason]: b[bMostRecentSeason],
+                  ...trackedSeasons,
                 };
               };
             }
           },
         }
       );
+
+      delete existingBatterSummaries[batter];
     }
 
     const batterSummary = batterSummaries[batter];
@@ -690,6 +721,7 @@ pipeline.on("end", async () => {
       careerSeasonData.atBatsWithRunnersInScoringPosition +=
         seasonStats.atBatsWithRunnersInScoringPosition;
       careerSeasonData.runsScored += seasonStats.runsScored;
+      careerSeasonData.hitByPitches += seasonStats.hitByPitches;
       careerSeasonData.hits += seasonStats.hits;
       careerSeasonData.hitsWithRunnersInScoringPosition +=
         seasonStats.hitsWithRunnersInScoringPosition;
@@ -735,6 +767,7 @@ pipeline.on("end", async () => {
       careerPostseasonData.atBatsWithRunnersInScoringPosition +=
         postseasonStats.atBatsWithRunnersInScoringPosition;
       careerPostseasonData.runsScored += postseasonStats.runsScored;
+      careerPostseasonData.hitByPitches += postseasonStats.hitByPitches;
       careerPostseasonData.hits += postseasonStats.hits;
       careerPostseasonData.hitsWithRunnersInScoringPosition +=
         postseasonStats.hitsWithRunnersInScoringPosition;
@@ -791,6 +824,11 @@ pipeline.on("end", async () => {
       careerPostseasonData
     );
   });
+
+  batterSummaries = {
+    ...(existingBatterSummaries ? existingBatterSummaries : {}),
+    ...batterSummaries,
+  };
 
   if (Object.keys(batterSummaries).length === 0) {
     return;
@@ -946,6 +984,7 @@ function initialBatterStatsObject(initialValues = {}) {
     caughtStealing: 0,
     doublesHit: 0,
     groundIntoDoublePlays: 0,
+    hitByPitches: 0,
     hits: 0,
     hitsWithRunnersInScoringPosition: 0,
     homeRunsHit: 0,

@@ -211,6 +211,12 @@ function getStatCategories() {
       name: "Walks",
       sort: "desc",
     },
+    {
+      abbreviation: "HPB",
+      id: "hitByPitches",
+      name: "Hit By Pitches",
+      sort: "desc",
+    },
     { abbreviation: "2B", id: "doublesHit", name: "Doubles Hit", sort: "desc" },
     { abbreviation: "3B", id: "triplesHit", name: "Triples Hit", sort: "desc" },
     { abbreviation: "TB", id: "totalBases", name: "Total Bases", sort: "desc" },
@@ -293,6 +299,12 @@ function getStatCategories() {
       name: "Walks Per 9 Innings",
       sort: "asc",
       minimumInningsPerTeamGame: 1,
+    },
+    {
+      abbreviation: "HPB",
+      id: "hitByPitches",
+      name: "Hit Batters",
+      sort: "desc",
     },
     { abbreviation: "ER", id: "earnedRuns", name: "Earned Runs", sort: "desc" },
     {

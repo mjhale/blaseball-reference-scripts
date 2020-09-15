@@ -9,8 +9,11 @@
 import fs from "fs";
 import ndjson from "ndjson";
 import deburr from "lodash.deburr";
+import dotenv from "dotenv";
 import hash from "object-hash";
 import merge from "deepmerge";
+
+dotenv.config();
 
 interface Player {
   aliases: Array<string | null>;
@@ -36,20 +39,29 @@ interface Player {
 
 // Fetch current season number to limit processing to current season only
 let standingsBySeason;
-let mostRecentSeason = 0;
+let generateStatsFromSeason = 0;
 
-try {
-  standingsBySeason = JSON.parse(
-    fs.readFileSync("./data/standings/standings.json", "utf8")
-  );
+function getMostRecentSeasonFromStandings() {
+  try {
+    standingsBySeason = JSON.parse(
+      fs.readFileSync("./data/standings/standings.json", "utf8")
+    );
 
-  mostRecentSeason = Number(
-    Object.keys(standingsBySeason)
-      .sort((a, b) => Number(a) - Number(b))
-      .pop()
-  );
-} catch (error) {
-  console.log(error);
+    generateStatsFromSeason = Number(
+      Object.keys(standingsBySeason)
+        .sort((a, b) => Number(a) - Number(b))
+        .pop()
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+getMostRecentSeasonFromStandings();
+
+// Override most recent season based on FROM_SEASON env var
+if (process.env.FROM_SEASON !== undefined) {
+  generateStatsFromSeason = Number(process.env.FROM_SEASON);
 }
 
 // Location of feed archive
@@ -59,7 +71,7 @@ const pipeline = fs
   .pipe(ndjson.parse({ strict: false }));
 
 // Maintain objects of all pitcher summaries and general info
-const pitcherSummaries: any = {};
+let pitcherSummaries: any = {};
 const playerList: Array<Player> = [];
 
 // Maintain hashes for each game state update to avoid duplicate updates
@@ -77,7 +89,7 @@ pipeline.on("error", (error) => {
 pipeline.on("data", (gameDataUpdate) => {
   if (
     gameDataUpdate?.sim?.season &&
-    gameDataUpdate.sim.season !== mostRecentSeason
+    gameDataUpdate.sim.season < generateStatsFromSeason
   ) {
     return;
   }
@@ -511,9 +523,17 @@ pipeline.on("data", (gameDataUpdate) => {
     // Increment bases on balls
     if (
       prevPitcherSummary &&
-      gameState.lastUpdate.match(/draws a walk/i) !== null
+      gameState.lastUpdate.match(/draws a walk|with a pitch/i) !== null
     ) {
       prevPitcherSummary.basesOnBalls += 1;
+    }
+
+    // Increment hit by pitches
+    if (
+      prevPitcherSummary &&
+      gameState.lastUpdate.match(/with a pitch/i) !== null
+    ) {
+      prevPitcherSummary.hitByPitches += 1;
     }
 
     // Increment strikeouts
@@ -597,36 +617,44 @@ pipeline.on("end", async () => {
       fs.readFileSync("./data/pitching/pitchers.json", "utf8")
     );
   } catch (error) {
+    existingPitcherSummaries = null;
     console.log(error);
   }
 
   Object.keys(pitcherSummaries).forEach((pitcher) => {
-    if (Object.hasOwnProperty.call(existingPitcherSummaries, pitcher)) {
-      existingPitcherSummaries[pitcher] = merge(
+    if (
+      existingPitcherSummaries &&
+      Object.hasOwnProperty.call(existingPitcherSummaries, pitcher)
+    ) {
+      pitcherSummaries[pitcher] = merge(
         existingPitcherSummaries[pitcher],
         pitcherSummaries[pitcher],
         {
           customMerge: (key) => {
             if (key === "seasons" || key === "postseasons") {
               return (a, b) => {
-                // Only process most recent season recorded
-                const bMostRecentSeason = Object.keys(b)
-                  .sort((a, b) => Number(a) - Number(b))
-                  .pop();
+                // Only overwrite existing data with tracked seasons
+                let trackedSeasons = {};
 
-                if (!bMostRecentSeason) {
-                  return a;
+                for (const season of Object.keys(b).sort(
+                  (a, b) => Number(a) - Number(b)
+                )) {
+                  if (Number(season) >= generateStatsFromSeason) {
+                    trackedSeasons = { ...trackedSeasons, [season]: b[season] };
+                  }
                 }
 
                 return {
                   ...a,
-                  [bMostRecentSeason]: b[bMostRecentSeason],
+                  ...trackedSeasons,
                 };
               };
             }
           },
         }
       );
+
+      delete existingPitcherSummaries[pitcher];
     }
 
     const pitcherSummary = pitcherSummaries[pitcher];
@@ -664,6 +692,7 @@ pipeline.on("end", async () => {
       careerSeasonData.appearances += seasonStats.appearances;
       careerSeasonData.outsRecorded += seasonStats.outsRecorded;
       careerSeasonData.shutouts += seasonStats.shutouts;
+      careerSeasonData.hitByPitches += seasonStats.hitByPitches;
       careerSeasonData.hitsAllowed += seasonStats.hitsAllowed;
       careerSeasonData.homeRuns += seasonStats.homeRuns;
       careerSeasonData.earnedRuns += seasonStats.earnedRuns;
@@ -714,6 +743,7 @@ pipeline.on("end", async () => {
       careerPostseasonData.appearances += postseasonStats.appearances;
       careerPostseasonData.outsRecorded += postseasonStats.outsRecorded;
       careerPostseasonData.shutouts += postseasonStats.shutouts;
+      careerPostseasonData.hitByPitches += postseasonStats.hitByPitches;
       careerPostseasonData.hitsAllowed += postseasonStats.hitsAllowed;
       careerPostseasonData.homeRuns += postseasonStats.homeRuns;
       careerPostseasonData.earnedRuns += postseasonStats.earnedRuns;
@@ -788,6 +818,11 @@ pipeline.on("end", async () => {
       careerPostseasonData
     );
   });
+
+  pitcherSummaries = {
+    ...(existingPitcherSummaries ? existingPitcherSummaries : {}),
+    ...pitcherSummaries,
+  };
 
   if (Object.keys(pitcherSummaries).length === 0) {
     return;
@@ -957,6 +992,7 @@ function initialPitcherStatsObject(initialValues = {}) {
     earnedRunAverage: 0,
     flyouts: 0,
     groundouts: 0,
+    hitByPitches: 0,
     hitsAllowed: 0,
     hitsAllowedPerNine: 0,
     homeRuns: 0,
