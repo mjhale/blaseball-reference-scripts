@@ -21,6 +21,12 @@ npx tsc --project tsconfig.json
 echo "Fetching latest team information..."
 node dist/fetchTeams.js
 
+echo "Generating standing tables..."
+node dist/generateStandings.js
+
+echo "Generating schedule files..."
+node dist/generateSchedules.js
+
 echo "Generating player stats..."
 node dist/generatePlayerPitchingStats.js
 node dist/generatePlayerBattingStats.js
@@ -31,12 +37,6 @@ node dist/generateTeamPlayerStats.js
 
 echo "Generating stat leaders..."
 node dist/generateStatLeaders.js
-
-echo "Generating standing tables..."
-node dist/generateStandings.js
-
-echo "Generating schedule files..."
-node dist/generateSchedules.js
 
 echo "Copying generated data to Blaseball Reference S3 bucket..."
 find ./data/ -type f -exec gzip "{}" \; -exec mv "{}.gz" "{}" \;

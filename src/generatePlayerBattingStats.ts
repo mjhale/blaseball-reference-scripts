@@ -8,6 +8,7 @@ import fs from "fs";
 import ndjson from "ndjson";
 import deburr from "lodash.deburr";
 import hash from "object-hash";
+import merge from "deepmerge";
 
 interface Player {
   aliases: Array<string | null>;
@@ -29,6 +30,24 @@ interface Player {
   name: string | null;
   position: "lineup";
   slug: string | null;
+}
+
+// Fetch current season number to limit processing to current season only
+let standingsBySeason;
+let mostRecentSeason = 0;
+
+try {
+  standingsBySeason = JSON.parse(
+    fs.readFileSync("./data/standings/standings.json", "utf8")
+  );
+
+  mostRecentSeason = Number(
+    Object.keys(standingsBySeason)
+      .sort((a, b) => Number(a) - Number(b))
+      .pop()
+  );
+} catch (error) {
+  console.log(error);
 }
 
 // Location of feed archive
@@ -56,6 +75,13 @@ pipeline.on("error", (error) => {
 
 // Process game feed logs
 pipeline.on("data", (gameDataUpdate) => {
+  if (
+    gameDataUpdate?.sim?.season &&
+    gameDataUpdate.sim.season !== mostRecentSeason
+  ) {
+    return;
+  }
+
   const currGameStates = gameDataUpdate.schedule;
 
   // Exclude updates with no games taking place
@@ -556,7 +582,7 @@ pipeline.on("data", (gameDataUpdate) => {
         ) {
           const runnerId = prevGameState.baseRunners[base];
 
-          if (batterSummaries[runnerId].name === caughtStealingName) {
+          if (batterSummaries[runnerId]?.name === caughtStealingName) {
             const runnerSummary = gameState.isPostseason
               ? batterSummaries[runnerId].postseasons[prevGameState.season]
               : batterSummaries[runnerId].seasons[prevGameState.season];
@@ -597,14 +623,54 @@ pipeline.on("data", (gameDataUpdate) => {
 });
 
 pipeline.on("end", async () => {
+  let existingBatterSummaries;
+
+  try {
+    existingBatterSummaries = JSON.parse(
+      fs.readFileSync("./data/batting/batters.json", "utf8")
+    );
+  } catch (error) {
+    console.log(error);
+  }
+
   Object.keys(batterSummaries).forEach((batter) => {
-    const careerPostseasonData = batterSummaries[batter].careerPostseason;
-    const careerSeasonData = batterSummaries[batter].careerSeason;
-    const seasonsData = batterSummaries[batter].seasons;
-    const postseasonsData = batterSummaries[batter].postseasons;
+    if (Object.hasOwnProperty.call(existingBatterSummaries, batter)) {
+      batterSummaries[batter] = merge(
+        existingBatterSummaries[batter],
+        batterSummaries[batter],
+        {
+          customMerge: (key) => {
+            if (key === "seasons" || key === "postseasons") {
+              return (a, b) => {
+                // Only process most recent season recorded
+                const bMostRecentSeason = Object.keys(b)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .pop();
+
+                if (!bMostRecentSeason) {
+                  return a;
+                }
+
+                return {
+                  ...a,
+                  [bMostRecentSeason]: b[bMostRecentSeason],
+                };
+              };
+            }
+          },
+        }
+      );
+    }
+
+    const batterSummary = batterSummaries[batter];
+
+    const careerPostseasonData = batterSummary.careerPostseason;
+    const careerSeasonData = batterSummary.careerSeason;
+    const seasonsData = batterSummary.seasons;
+    const postseasonsData = batterSummary.postseasons;
 
     Object.keys(seasonsData).forEach((season) => {
-      const seasonStats = batterSummaries[batter].seasons[season];
+      const seasonStats = batterSummary.seasons[season];
 
       // Calculate non-tally based season stats
       seasonStats.battingAverage = calculateBattingAverage(seasonStats);
@@ -643,7 +709,7 @@ pipeline.on("end", async () => {
     });
 
     Object.keys(postseasonsData).forEach((postseason) => {
-      const postseasonStats = batterSummaries[batter].postseasons[postseason];
+      const postseasonStats = batterSummary.postseasons[postseason];
 
       // Calculate non-tally based postseason stats
       postseasonStats.battingAverage = calculateBattingAverage(postseasonStats);
@@ -725,6 +791,10 @@ pipeline.on("end", async () => {
       careerPostseasonData
     );
   });
+
+  if (Object.keys(batterSummaries).length === 0) {
+    return;
+  }
 
   // Output objects to JSON files
   await fs.promises.mkdir("./data/batting", { recursive: true });

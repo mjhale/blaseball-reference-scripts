@@ -10,6 +10,7 @@ import fs from "fs";
 import ndjson from "ndjson";
 import deburr from "lodash.deburr";
 import hash from "object-hash";
+import merge from "deepmerge";
 
 interface Player {
   aliases: Array<string | null>;
@@ -31,6 +32,24 @@ interface Player {
   name: string | null;
   position: "lineup";
   slug: string | null;
+}
+
+// Fetch current season number to limit processing to current season only
+let standingsBySeason;
+let mostRecentSeason = 0;
+
+try {
+  standingsBySeason = JSON.parse(
+    fs.readFileSync("./data/standings/standings.json", "utf8")
+  );
+
+  mostRecentSeason = Number(
+    Object.keys(standingsBySeason)
+      .sort((a, b) => Number(a) - Number(b))
+      .pop()
+  );
+} catch (error) {
+  console.log(error);
 }
 
 // Location of feed archive
@@ -56,6 +75,13 @@ pipeline.on("error", (error) => {
 
 // Process game feed logs
 pipeline.on("data", (gameDataUpdate) => {
+  if (
+    gameDataUpdate?.sim?.season &&
+    gameDataUpdate.sim.season !== mostRecentSeason
+  ) {
+    return;
+  }
+
   const currGameStates = gameDataUpdate.schedule;
 
   // Exclude updates with no games taking place
@@ -526,6 +552,7 @@ pipeline.on("data", (gameDataUpdate) => {
 
     // Increment quality starts
     // @TODO: Account for mid-game pitcher changes
+    // @TODO: Use only earned runs for calcluation
     if (
       prevGameState &&
       prevGameState.gameComplete === false &&
@@ -563,14 +590,54 @@ pipeline.on("data", (gameDataUpdate) => {
 
 // Perform final calculations after feed is processed
 pipeline.on("end", async () => {
+  let existingPitcherSummaries;
+
+  try {
+    existingPitcherSummaries = JSON.parse(
+      fs.readFileSync("./data/pitching/pitchers.json", "utf8")
+    );
+  } catch (error) {
+    console.log(error);
+  }
+
   Object.keys(pitcherSummaries).forEach((pitcher) => {
-    const careerPostseasonData = pitcherSummaries[pitcher].careerPostseason;
-    const careerSeasonData = pitcherSummaries[pitcher].careerSeason;
-    const seasonsData = pitcherSummaries[pitcher].seasons;
-    const postseasonsData = pitcherSummaries[pitcher].postseasons;
+    if (Object.hasOwnProperty.call(existingPitcherSummaries, pitcher)) {
+      existingPitcherSummaries[pitcher] = merge(
+        existingPitcherSummaries[pitcher],
+        pitcherSummaries[pitcher],
+        {
+          customMerge: (key) => {
+            if (key === "seasons" || key === "postseasons") {
+              return (a, b) => {
+                // Only process most recent season recorded
+                const bMostRecentSeason = Object.keys(b)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .pop();
+
+                if (!bMostRecentSeason) {
+                  return a;
+                }
+
+                return {
+                  ...a,
+                  [bMostRecentSeason]: b[bMostRecentSeason],
+                };
+              };
+            }
+          },
+        }
+      );
+    }
+
+    const pitcherSummary = pitcherSummaries[pitcher];
+
+    const careerPostseasonData = pitcherSummary.careerPostseason;
+    const careerSeasonData = pitcherSummary.careerSeason;
+    const seasonsData = pitcherSummary.seasons;
+    const postseasonsData = pitcherSummary.postseasons;
 
     Object.keys(seasonsData).forEach((season) => {
-      const seasonStats = pitcherSummaries[pitcher].seasons[season];
+      const seasonStats = pitcherSummary.seasons[season];
 
       // Calculate non-tally based season stats
       seasonStats.inningsPitched = calculateInningsPitched(seasonStats); // Keep above stats dependent on IP
@@ -610,7 +677,7 @@ pipeline.on("end", async () => {
     });
 
     Object.keys(postseasonsData).forEach((postseason) => {
-      const postseasonStats = pitcherSummaries[pitcher].postseasons[postseason];
+      const postseasonStats = pitcherSummary.postseasons[postseason];
 
       // Calculate non-tally based postseason stats
       postseasonStats.inningsPitched = calculateInningsPitched(postseasonStats); // Keep above stats dependent on IP
@@ -721,6 +788,10 @@ pipeline.on("end", async () => {
       careerPostseasonData
     );
   });
+
+  if (Object.keys(pitcherSummaries).length === 0) {
+    return;
+  }
 
   // Output objects to JSON files
   await fs.promises.mkdir("./data/pitching", { recursive: true });
