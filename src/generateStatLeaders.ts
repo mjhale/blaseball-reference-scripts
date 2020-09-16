@@ -247,6 +247,13 @@ function getStatCategories() {
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
+      abbreviation: "OPS",
+      id: "onBasePlusSlugging",
+      name: "On-base plus slugging",
+      sort: "desc",
+      minimumPlateAppearancesPerTeamGame: 3,
+    },
+    {
       abbreviation: "R",
       id: "runsScored",
       name: "Runs Scored",
