@@ -214,7 +214,7 @@ function getStatCategories() {
     {
       abbreviation: "HPB",
       id: "hitByPitches",
-      name: "Hit By Pitches",
+      name: "Hit-by-pitches",
       sort: "desc",
     },
     { abbreviation: "2B", id: "doublesHit", name: "Doubles Hit", sort: "desc" },
@@ -310,7 +310,7 @@ function getStatCategories() {
     {
       abbreviation: "HPB",
       id: "hitByPitches",
-      name: "Hit Batters",
+      name: "Hit-by-pitches",
       sort: "desc",
     },
     { abbreviation: "ER", id: "earnedRuns", name: "Earned Runs", sort: "desc" },
@@ -507,18 +507,15 @@ async function writeStatLeadersToJson({
   // Output team object to json
   await fs.promises.mkdir(`./data/leaders`, { recursive: true });
 
-  const allTimeWriteStream: NodeJS.WritableStream = fs.createWriteStream(
-    "./data/leaders/allTime.json"
-  );
-  allTimeWriteStream.write(
-    `${JSON.stringify(allTimeCategoryLeaders, null, "\t")}\n`
-  );
-
   const seasonLeadersWriteStream: NodeJS.WritableStream = fs.createWriteStream(
-    "./data/leaders/bySeason.json"
+    "./data/leaders/leaders.json"
   );
   seasonLeadersWriteStream.write(
-    `${JSON.stringify(seasonLeaders, null, "\t")}\n`
+    `${JSON.stringify(
+      { ...seasonLeaders, allTime: allTimeCategoryLeaders },
+      null,
+      "\t"
+    )}\n`
   );
 
   const categoriesWriteStream: NodeJS.WritableStream = fs.createWriteStream(
