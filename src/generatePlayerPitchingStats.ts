@@ -72,7 +72,17 @@ const pipeline = fs
 
 // Maintain objects of all pitcher summaries and general info
 let pitcherSummaries: any = {};
-const playerList: Array<Player> = [];
+let playerList: Array<Player>;
+
+// Initialize player list with existing data
+try {
+  playerList = JSON.parse(
+    fs.readFileSync("./data/players/pitchers.json", "utf8")
+  );
+} catch (error) {
+  playerList = [];
+  console.log(error);
+}
 
 // Maintain hashes for each game state update to avoid duplicate updates
 const gameStateHashes = {};

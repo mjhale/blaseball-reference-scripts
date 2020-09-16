@@ -70,7 +70,17 @@ const pipeline = fs
 
 // Create initial player object and stat object
 let batterSummaries = {};
-const playerList: any = [];
+let playerList: Array<Player>;
+
+// Initialize player list with existing data
+try {
+  playerList = JSON.parse(
+    fs.readFileSync("./data/players/batters.json", "utf8")
+  );
+} catch (error) {
+  playerList = [];
+  console.log(error);
+}
 
 // Maintain hashes for each game state update to avoid duplicate updates
 const gameStateHashes = {};
