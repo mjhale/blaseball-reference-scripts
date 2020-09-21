@@ -461,13 +461,15 @@ function updateCategoryLeaders({
       value: playerStats[category.id],
     });
   } else {
+    let positionFoundAmongLeaders = false;
+
     // Find player's stat position among current leaders
     for (let i = 0; i < leaders.length; i++) {
       const leader = leaders[i];
 
       if (
-        (category.sort === "asc" && playerStats[category.id] <= leader.value) ||
-        (category.sort === "desc" && playerStats[category.id] >= leader.value)
+        (category.sort === "asc" && playerStats[category.id] < leader.value) ||
+        (category.sort === "desc" && playerStats[category.id] > leader.value)
       ) {
         const start = leaders.slice(0, i);
         const end = leaders.slice(i);
@@ -486,9 +488,25 @@ function updateCategoryLeaders({
           ...end,
         ];
 
+        positionFoundAmongLeaders = true;
+
         // Player's position has been found, exit out of loop
         break;
       }
+    }
+
+    if (
+      !positionFoundAmongLeaders &&
+      leaders.length < MAX_LEADERS_PER_CATEGORY
+    ) {
+      leaders.push({
+        playerId: player.id,
+        playerName: player.name,
+        playerSlug: player.slug,
+        team: playerStats.team,
+        teamName: playerStats.teamName,
+        value: playerStats[category.id],
+      });
     }
   }
 
