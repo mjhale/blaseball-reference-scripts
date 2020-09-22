@@ -12,6 +12,9 @@ echo "Combining logs..."
 cat ./blaseball-logs/*.gz > ./tmp/combined-blaseball-log.json.gz
 gunzip -c ./tmp/combined-blaseball-log.json.gz > ./tmp/blaseball-log.json
 
+echo "Pulling latest script updates..."
+git pull
+
 echo "Installing JavaScript dependencies..."
 npm install
 
