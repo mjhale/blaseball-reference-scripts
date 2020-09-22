@@ -403,32 +403,10 @@ pipeline.on("data", (gameDataUpdate) => {
       prevBatterSummary.runsScored += 1;
     }
 
-    // Increment runs scored for following scenarios, assuming runner on third is only runner to score
-    // [x] - José Haley reaches on fielder's choice. Cell Barajas out at second base. Ronan Combs scores
-    // [x] - Marco Stink  scores on the sacrifice.
-    // [x] - Morrow Doyle hit a sacrifice fly. Esme Ramsey tags up and scores!
-    // [x] - Paula Mason draws a walk. Baby Urlacher scores!
-    if (prevGameState && gameState.lastUpdate.match(/\D scores/i) !== null) {
-      const scoringRunnerId = prevGameState.baseRunners[0];
-
-      // Increment runs scored for runner on third
-      // - @TODO: Add initial batter object if it doesn't exist
-      if (batterSummaries.hasOwnProperty(scoringRunnerId)) {
-        if (gameState.isPostseason) {
-          batterSummaries[scoringRunnerId].postseasons[
-            gameState.season
-          ].runsScored += 1;
-        } else {
-          batterSummaries[scoringRunnerId].seasons[
-            gameState.season
-          ].runsScored += 1;
-        }
-      }
-    }
-
     // Increment runs scored for following scenarios
     // [x] - Lang Richardson hits a Single! 1 scores.
-    const numberOfRunsScoredMatch = gameState.lastUpdate.match(/(\d) scores/i);
+    // [x] - Juice Collins hits a Single! 2s score.
+    const numberOfRunsScoredMatch = gameState.lastUpdate.match(/(\d+)s? scores?\b/i);
     if (prevGameState && numberOfRunsScoredMatch !== null) {
       const runsScored = Number(numberOfRunsScoredMatch[1]);
       const prevBasesRunners = prevGameState.baseRunners.slice();
@@ -448,6 +426,27 @@ pipeline.on("data", (gameDataUpdate) => {
               gameState.season
             ].runsScored += 1;
           }
+        }
+      }
+    // Increment runs scored for following scenarios, assuming runner on third is only runner to score
+    // [x] - José Haley reaches on fielder's choice. Cell Barajas out at second base. Ronan Combs scores
+    // [x] - Marco Stink  scores on the sacrifice.
+    // [x] - Morrow Doyle hit a sacrifice fly. Esme Ramsey tags up and scores!
+    // [x] - Paula Mason draws a walk. Baby Urlacher scores!
+    } else if (prevGameState && gameState.lastUpdate.match(/ scores?\b/i) !== null) {
+      const scoringRunnerId = prevGameState.baseRunners[0];
+
+      // Increment runs scored for runner on third
+      // - @TODO: Add initial batter object if it doesn't exist
+      if (batterSummaries.hasOwnProperty(scoringRunnerId)) {
+        if (gameState.isPostseason) {
+          batterSummaries[scoringRunnerId].postseasons[
+            gameState.season
+          ].runsScored += 1;
+        } else {
+          batterSummaries[scoringRunnerId].seasons[
+            gameState.season
+          ].runsScored += 1;
         }
       }
     }
