@@ -1,16 +1,16 @@
-import Bottleneck from "bottleneck";
-import chunk from "lodash.chunk";
-import { fetchData } from "./utils";
-import fs from "fs";
+import Bottleneck from 'bottleneck';
+import chunk from 'lodash.chunk';
+import { fetchData } from './utils';
+import fs from 'fs';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1000 });
 
 async function combinePlayers() {
   const pitchers = JSON.parse(
-    fs.readFileSync("./data/players/pitchers.json", "utf8")
+    fs.readFileSync('./data/players/pitchers.json', 'utf8')
   );
   const batters = JSON.parse(
-    fs.readFileSync("./data/players/batters.json", "utf8")
+    fs.readFileSync('./data/players/batters.json', 'utf8')
   );
 
   const playerIds: Set<string> = new Set();
@@ -39,13 +39,13 @@ async function combinePlayers() {
           fetchData,
           `https://www.blaseball.com/database/players?ids=${ids
             .filter((id) => id !== null)
-            .join(",")}`
+            .join(',')}`
         );
         console.log(
           `Fetched latest data for ${fetchedPlayers.length} players...`
         );
       } catch (err) {
-        console.log(`Fetch error with IDs: ${Array.from(ids).join(", ")}...`);
+        console.log(`Fetch error with IDs: ${Array.from(ids).join(', ')}...`);
         return Promise.reject(new Error(err.type));
       }
 
@@ -74,7 +74,7 @@ async function combinePlayers() {
 
     fs.writeFile(
       `./data/players/${players[player].slug}/details.json`,
-      `${JSON.stringify({ ...players[player] }, null, "\t")}\n`,
+      `${JSON.stringify({ ...players[player] }, null, '\t')}\n`,
       function (err) {
         if (err) {
           console.log(err);
@@ -84,8 +84,8 @@ async function combinePlayers() {
   }
 
   fs.writeFile(
-    "./data/players/players.json",
-    `${JSON.stringify(Object.values(players), null, "\t")}\n`,
+    './data/players/players.json',
+    `${JSON.stringify(Object.values(players), null, '\t')}\n`,
     function (err) {
       if (err) {
         console.log(err);

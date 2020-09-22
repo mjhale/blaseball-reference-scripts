@@ -1,15 +1,15 @@
-import Bottleneck from "bottleneck";
-import { fetchData } from "./utils";
-import fetchGameResults from "./fetchGameResults";
-import fs from "fs";
-import merge from "deepmerge";
+import Bottleneck from 'bottleneck';
+import { fetchData } from './utils';
+import fetchGameResults from './fetchGameResults';
+import fs from 'fs';
+import merge from 'deepmerge';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
 
 type DivisionRecord = {
   league: string;
   division: string;
-  standingsType: "regularSeason" | "postseason";
+  standingsType: 'regularSeason' | 'postseason';
   lastUpdated: string;
   teamRecords: Array<TeamRecord>;
 };
@@ -20,7 +20,7 @@ type TeamRecord = {
   teamSlug: string;
   season: number;
   streak: {
-    streakType: "wins" | "losses";
+    streakType: 'wins' | 'losses';
     streakNumber: number;
     streakCode: string;
   };
@@ -110,17 +110,17 @@ function main() {
 }
 
 const subleaguesBySeason = {
-  "0": ["The Good League", "The Evil League"],
-  "1": ["The Good League", "The Evil League"],
-  "2": ["The Good League", "The Evil League"],
-  "3": ["The Good League", "The Evil League"],
-  "4": ["The Good League", "The Evil League"],
-  "5": ["The Mild League", "The Wild League"],
-  "6": ["The Mild League", "The Wild League"],
-  "7": ["The Mild League", "The Wild League"],
-  "8": ["The Mild League", "The Wild League"],
-  "9": ["The Mild League", "The Wild League"],
-  "10": ["The Mild League", "The Wild League"],
+  '0': ['The Good League', 'The Evil League'],
+  '1': ['The Good League', 'The Evil League'],
+  '2': ['The Good League', 'The Evil League'],
+  '3': ['The Good League', 'The Evil League'],
+  '4': ['The Good League', 'The Evil League'],
+  '5': ['The Mild League', 'The Wild League'],
+  '6': ['The Mild League', 'The Wild League'],
+  '7': ['The Mild League', 'The Wild League'],
+  '8': ['The Mild League', 'The Wild League'],
+  '9': ['The Mild League', 'The Wild League'],
+  '10': ['The Mild League', 'The Wild League'],
 };
 
 async function generateStandings() {
@@ -141,7 +141,7 @@ async function generateStandings() {
 
   try {
     games = await JSON.parse(
-      fs.readFileSync("./data/gameResults.json", "utf8")
+      fs.readFileSync('./data/gameResults.json', 'utf8')
     );
 
     startingSeason = Object.keys(games)
@@ -192,10 +192,10 @@ async function generateStandings() {
         // Filter out postseason games
         if (game.isPostseason === true) break;
 
-        const winner: "away" | "home" =
-          game.homeScore > game.awayScore ? "home" : "away";
-        const loser: "away" | "home" =
-          game.homeScore > game.awayScore ? "away" : "home";
+        const winner: 'away' | 'home' =
+          game.homeScore > game.awayScore ? 'home' : 'away';
+        const loser: 'away' | 'home' =
+          game.homeScore > game.awayScore ? 'away' : 'home';
 
         const winnerSubleague: Subleague | undefined = subleagues
           .filter((subleague) => {
@@ -271,22 +271,22 @@ async function generateStandings() {
         }
 
         // Update streak
-        if (winningTeamRecords.streak.streakType === "wins") {
+        if (winningTeamRecords.streak.streakType === 'wins') {
           winningTeamRecords.streak.streakNumber += 1;
           winningTeamRecords.streak.streakCode = `W${winningTeamRecords.streak.streakNumber}`;
         } else {
-          winningTeamRecords.streak.streakType = "wins";
+          winningTeamRecords.streak.streakType = 'wins';
           winningTeamRecords.streak.streakNumber = 1;
-          winningTeamRecords.streak.streakCode = "W1";
+          winningTeamRecords.streak.streakCode = 'W1';
         }
 
-        if (losingTeamRecords.streak.streakType === "losses") {
+        if (losingTeamRecords.streak.streakType === 'losses') {
           losingTeamRecords.streak.streakNumber += 1;
           losingTeamRecords.streak.streakCode = `L${winningTeamRecords.streak.streakNumber}`;
         } else {
-          losingTeamRecords.streak.streakType = "losses";
+          losingTeamRecords.streak.streakType = 'losses';
           losingTeamRecords.streak.streakNumber = 1;
-          losingTeamRecords.streak.streakCode = "L1";
+          losingTeamRecords.streak.streakCode = 'L1';
         }
 
         // Set season
@@ -491,7 +491,7 @@ async function generateStandings() {
             winningTeamRecords.weatherRecords[
               game.weather
             ] = createSplitRecordObject({
-              type: getWeather()[game.weather].name || "",
+              type: getWeather()[game.weather].name || '',
             });
           }
 
@@ -504,7 +504,7 @@ async function generateStandings() {
             losingTeamRecords.weatherRecords[
               game.weather
             ] = createSplitRecordObject({
-              type: getWeather()[game.weather].name || "",
+              type: getWeather()[game.weather].name || '',
             });
           }
 
@@ -614,7 +614,7 @@ async function generateStandings() {
         teamRecord.sportRank = index + 1;
         teamRecord.sportGamesBack =
           index === 0
-            ? "-"
+            ? '-'
             : String(
                 (leadingTeamWinDifferential -
                   (teamRecord.wins - teamRecord.losses)) /
@@ -637,7 +637,7 @@ async function generateStandings() {
         teamRecord.divisionRank = index + 1;
         teamRecord.divisionGamesBack =
           index === 0
-            ? "-"
+            ? '-'
             : String(
                 (leadingTeamWinDifferential -
                   (teamRecord.wins - teamRecord.losses)) /
@@ -658,18 +658,18 @@ async function generateStandings() {
           GAMES_IN_SEASON + 1 - sortedLeague[i].wins - sortedLeague[4].losses;
 
         sortedLeague[i].magicNumber =
-          magicNumber <= 0 ? "X" : String(magicNumber);
+          magicNumber <= 0 ? 'X' : String(magicNumber);
         sortedLeague[i].clinched = magicNumber <= 0 ? true : false;
-        sortedLeague[i].eliminationNumber = "-";
+        sortedLeague[i].eliminationNumber = '-';
       }
 
       for (let i = 4; i < sortedLeague.length; i++) {
         const tragicNumber =
           GAMES_IN_SEASON + 1 - sortedLeague[3].wins - sortedLeague[i].losses;
 
-        sortedLeague[i].magicNumber = "-";
+        sortedLeague[i].magicNumber = '-';
         sortedLeague[i].eliminationNumber =
-          tragicNumber <= 0 ? "E" : String(tragicNumber);
+          tragicNumber <= 0 ? 'E' : String(tragicNumber);
       }
 
       const leadingTeamWinDifferential =
@@ -679,7 +679,7 @@ async function generateStandings() {
         teamRecord.leagueRank = index + 1;
         teamRecord.leagueGamesBack =
           index === 0
-            ? "-"
+            ? '-'
             : String(
                 (leadingTeamWinDifferential -
                   (teamRecord.wins - teamRecord.losses)) /
@@ -700,7 +700,7 @@ async function generateStandings() {
 
   fs.writeFile(
     `./data/standings/standings.json`,
-    `${JSON.stringify(divisionRecordsBySeason, null, "\t")}\n`,
+    `${JSON.stringify(divisionRecordsBySeason, null, '\t')}\n`,
     function (err) {
       if (err) {
         console.log(err);
@@ -709,8 +709,8 @@ async function generateStandings() {
   );
 
   fs.writeFile(
-    "./data/gameResults.json",
-    `${JSON.stringify(games, null, "\t")}\n`,
+    './data/gameResults.json',
+    `${JSON.stringify(games, null, '\t')}\n`,
     function (err) {
       if (err) {
         console.log(err);
@@ -730,7 +730,7 @@ function createSplitRecordObject(initialValues: any) {
     wins: 0,
     losses: 0,
     pct: 0,
-    type: "",
+    type: '',
   };
 
   // Perform a shallow copy of initialValues over defaults
@@ -739,23 +739,23 @@ function createSplitRecordObject(initialValues: any) {
 
 function createTeamRecord(initialValues: any): TeamRecord {
   const defaults = {
-    teamId: "",
-    teamName: "",
-    teamSlug: "",
+    teamId: '',
+    teamName: '',
+    teamSlug: '',
     season: null,
     streak: {
-      streakType: "",
+      streakType: '',
       streakNumber: 0,
-      streakCode: "",
+      streakCode: '',
     },
     divisionRank: 0,
     leagueRank: 0,
     sportRank: 0,
     gamesPlayed: 0,
-    gamesBack: "",
-    leagueGamesBack: "",
-    sportGamesBack: "",
-    divisionGamesBack: "",
+    gamesBack: '',
+    leagueGamesBack: '',
+    sportGamesBack: '',
+    divisionGamesBack: '',
     leagueRecord: {
       wins: 0,
       losses: 0,
@@ -766,37 +766,37 @@ function createTeamRecord(initialValues: any): TeamRecord {
         wins: 0,
         losses: 0,
         pct: 0,
-        type: "home",
+        type: 'home',
       },
       away: {
         wins: 0,
         losses: 0,
         pct: 0,
-        type: "away",
+        type: 'away',
       },
       extraInnings: {
         wins: 0,
         losses: 0,
         pct: 0,
-        type: "extraInnings",
+        type: 'extraInnings',
       },
       winners: {
         wins: 0,
         losses: 0,
         pct: 0,
-        type: "winners",
+        type: 'winners',
       },
       oneRun: {
         wins: 0,
         losses: 0,
         pct: 0,
-        type: "oneRun",
+        type: 'oneRun',
       },
       shame: {
         wins: 0,
         losses: 0,
         pct: 0,
-        type: "shame",
+        type: 'shame',
       },
     },
     weatherRecords: {},
@@ -809,8 +809,8 @@ function createTeamRecord(initialValues: any): TeamRecord {
     leagueLeader: false,
     sportLeader: false,
     clinched: false,
-    eliminationNumber: "",
-    magicNumber: "",
+    eliminationNumber: '',
+    magicNumber: '',
     wins: 0,
     losses: 0,
     runDifferential: 0,
@@ -830,7 +830,7 @@ async function fetchSubleaguesAndDivisions(): Promise<{
 
   try {
     const cachedResponse = JSON.parse(
-      fs.readFileSync("./data/leaguesAndDivisions.json", "utf8")
+      fs.readFileSync('./data/leaguesAndDivisions.json', 'utf8')
     );
 
     const dataJson: {
@@ -841,7 +841,7 @@ async function fetchSubleaguesAndDivisions(): Promise<{
 
     const ONE_DAY = 24 * 60 * 60 * 1000;
     if (Date.now() - dataJson.lastUpdatedAt > ONE_DAY) {
-      console.log("Old cache object... refetching.");
+      console.log('Old cache object... refetching.');
       hasCachedResponse = false;
     }
 
@@ -861,7 +861,7 @@ async function fetchSubleaguesAndDivisions(): Promise<{
   const subleagues: { [subleagueId: string]: Subleague } = response.subleagues;
   const divisions: { [divisionId: string]: Division } = response.divisions;
 
-  const ILB_ID = "d8545021-e9fc-48a3-af74-48685950a183";
+  const ILB_ID = 'd8545021-e9fc-48a3-af74-48685950a183';
   const league: any = await limiter.schedule(
     fetchData,
     `https://blaseball.com/database/league?id=${ILB_ID}`
@@ -906,11 +906,11 @@ async function fetchSubleaguesAndDivisions(): Promise<{
   };
 
   fs.writeFile(
-    "./data/leaguesAndDivisions.json",
+    './data/leaguesAndDivisions.json',
     `${JSON.stringify(
       { ...response, lastUpdatedAt: Date.now() },
       null,
-      "\t"
+      '\t'
     )}\n`,
     function (err) {
       if (err) {
@@ -925,46 +925,46 @@ async function fetchSubleaguesAndDivisions(): Promise<{
 function getWeather() {
   return [
     {
-      name: "Void",
+      name: 'Void',
     },
     {
-      name: "Sunny",
+      name: 'Sunny',
     },
     {
-      name: "Overcast",
+      name: 'Overcast',
     },
     {
-      name: "Rainy",
+      name: 'Rainy',
     },
     {
-      name: "Sandstorm",
+      name: 'Sandstorm',
     },
     {
-      name: "Snowy",
+      name: 'Snowy',
     },
     {
-      name: "Acidic",
+      name: 'Acidic',
     },
     {
-      name: "Solar Eclipse",
+      name: 'Solar Eclipse',
     },
     {
-      name: "Glitter",
+      name: 'Glitter',
     },
     {
-      name: "Bloodwind",
+      name: 'Bloodwind',
     },
     {
-      name: "Peanuts",
+      name: 'Peanuts',
     },
     {
-      name: "Birds",
+      name: 'Birds',
     },
     {
-      name: "Feedback",
+      name: 'Feedback',
     },
     {
-      name: "Reverb",
+      name: 'Reverb',
     },
   ];
 }

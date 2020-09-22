@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from 'fs';
 
 // Type definitions
 interface AllTimeStatLeaders {
@@ -60,10 +60,10 @@ interface StatCategory {
   abbreviation: string;
   id: string;
   name: string;
-  sort: "asc" | "desc";
+  sort: 'asc' | 'desc';
   minimumInningsPerTeamGame?: number;
   minimumPlateAppearancesPerTeamGame?: number;
-  type?: "batting" | "pitching";
+  type?: 'batting' | 'pitching';
 }
 
 interface StatLeader {
@@ -92,10 +92,10 @@ function generateStatLeaders(): {
 } {
   // Load pre-generated teams and league-wide pitcher, and batter stats
   const batters = JSON.parse(
-    fs.readFileSync("./data/batting/batters.json", "utf8")
+    fs.readFileSync('./data/batting/batters.json', 'utf8')
   );
   const pitchers = JSON.parse(
-    fs.readFileSync("./data/pitching/pitchers.json", "utf8")
+    fs.readFileSync('./data/pitching/pitchers.json', 'utf8')
   );
 
   // Objects to hold stat leaders
@@ -106,12 +106,12 @@ function generateStatLeaders(): {
   for (const category of statCategories) {
     let playerGroup: typeof batters | typeof pitchers;
 
-    if (category.type === "batting") {
+    if (category.type === 'batting') {
       playerGroup = batters;
-    } else if (category.type === "pitching") {
+    } else if (category.type === 'pitching') {
       playerGroup = pitchers;
     } else {
-      throw new Error("Invalid player group");
+      throw new Error('Invalid player group');
     }
 
     // Initialize stat category's leader array
@@ -137,7 +137,7 @@ function generateStatLeaders(): {
         leaders: allTimeCategoryLeaders[category.type][category.id],
         player: player,
         playerStats: player.careerSeason,
-        season: "career",
+        season: 'career',
       });
 
       // Update season category leaders
@@ -193,228 +193,228 @@ function getStatCategories() {
   // Stat categories
   const batterStatCategories: Array<StatCategory> = [
     {
-      abbreviation: "AVG",
-      id: "battingAverage",
-      name: "Batting Average",
-      sort: "desc",
+      abbreviation: 'AVG',
+      id: 'battingAverage',
+      name: 'Batting Average',
+      sort: 'desc',
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
-      abbreviation: "HRISP",
-      id: "hitsWithRunnersInScoringPosition",
-      name: "Hits With Runners in Scoring Position",
-      sort: "desc",
+      abbreviation: 'HRISP',
+      id: 'hitsWithRunnersInScoringPosition',
+      name: 'Hits With Runners in Scoring Position',
+      sort: 'desc',
     },
     {
-      abbreviation: "BB",
-      id: "basesOnBalls",
-      name: "Walks",
-      sort: "desc",
+      abbreviation: 'BB',
+      id: 'basesOnBalls',
+      name: 'Walks',
+      sort: 'desc',
     },
     {
-      abbreviation: "HPB",
-      id: "hitByPitches",
-      name: "Hit-by-pitches",
-      sort: "desc",
+      abbreviation: 'HPB',
+      id: 'hitByPitches',
+      name: 'Hit-by-pitches',
+      sort: 'desc',
     },
-    { abbreviation: "2B", id: "doublesHit", name: "Doubles Hit", sort: "desc" },
-    { abbreviation: "3B", id: "triplesHit", name: "Triples Hit", sort: "desc" },
-    { abbreviation: "TB", id: "totalBases", name: "Total Bases", sort: "desc" },
+    { abbreviation: '2B', id: 'doublesHit', name: 'Doubles Hit', sort: 'desc' },
+    { abbreviation: '3B', id: 'triplesHit', name: 'Triples Hit', sort: 'desc' },
+    { abbreviation: 'TB', id: 'totalBases', name: 'Total Bases', sort: 'desc' },
     {
-      abbreviation: "CS",
-      id: "caughtStealing",
-      name: "Caught Stealing",
-      sort: "desc",
-    },
-    {
-      abbreviation: "GDP",
-      id: "groundIntoDoublePlays",
-      name: "Ground Into Double Plays",
-      sort: "desc",
-    },
-    { abbreviation: "H", id: "hits", name: "Hits", sort: "desc" },
-    {
-      abbreviation: "HR",
-      id: "homeRunsHit",
-      name: "Home Runs Hit",
-      sort: "desc",
+      abbreviation: 'CS',
+      id: 'caughtStealing',
+      name: 'Caught Stealing',
+      sort: 'desc',
     },
     {
-      abbreviation: "OBP",
-      id: "onBasePercentage",
-      name: "On-base Percentage",
-      sort: "desc",
+      abbreviation: 'GDP',
+      id: 'groundIntoDoublePlays',
+      name: 'Ground Into Double Plays',
+      sort: 'desc',
+    },
+    { abbreviation: 'H', id: 'hits', name: 'Hits', sort: 'desc' },
+    {
+      abbreviation: 'HR',
+      id: 'homeRunsHit',
+      name: 'Home Runs Hit',
+      sort: 'desc',
+    },
+    {
+      abbreviation: 'OBP',
+      id: 'onBasePercentage',
+      name: 'On-base Percentage',
+      sort: 'desc',
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
-      abbreviation: "OPS",
-      id: "onBasePlusSlugging",
-      name: "On-base plus slugging",
-      sort: "desc",
+      abbreviation: 'OPS',
+      id: 'onBasePlusSlugging',
+      name: 'On-base plus slugging',
+      sort: 'desc',
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
-      abbreviation: "R",
-      id: "runsScored",
-      name: "Runs Scored",
-      sort: "desc",
+      abbreviation: 'R',
+      id: 'runsScored',
+      name: 'Runs Scored',
+      sort: 'desc',
     },
     {
-      abbreviation: "RBI",
-      id: "runsBattedIn",
-      name: "Runs Batted In",
-      sort: "desc",
+      abbreviation: 'RBI',
+      id: 'runsBattedIn',
+      name: 'Runs Batted In',
+      sort: 'desc',
     },
     {
-      abbreviation: "SLG",
-      id: "sluggingPercentage",
-      name: "Slugging Percentage",
-      sort: "desc",
+      abbreviation: 'SLG',
+      id: 'sluggingPercentage',
+      name: 'Slugging Percentage',
+      sort: 'desc',
       minimumPlateAppearancesPerTeamGame: 3,
     },
     {
-      abbreviation: "SB",
-      id: "stolenBases",
-      name: "Stolen Bases",
-      sort: "desc",
+      abbreviation: 'SB',
+      id: 'stolenBases',
+      name: 'Stolen Bases',
+      sort: 'desc',
     },
     {
-      abbreviation: "SF",
-      id: "sacrificeFlies",
-      name: "Sacrifice Flies",
-      sort: "desc",
+      abbreviation: 'SF',
+      id: 'sacrificeFlies',
+      name: 'Sacrifice Flies',
+      sort: 'desc',
     },
     {
-      abbreviation: "SH",
-      id: "sacrificeBunts",
-      name: "Sacrifice Bunts",
-      sort: "desc",
+      abbreviation: 'SH',
+      id: 'sacrificeBunts',
+      name: 'Sacrifice Bunts',
+      sort: 'desc',
     },
-    { abbreviation: "SO", id: "strikeouts", name: "Strikeouts", sort: "desc" },
+    { abbreviation: 'SO', id: 'strikeouts', name: 'Strikeouts', sort: 'desc' },
   ];
 
   const pitcherStatCategories: Array<StatCategory> = [
     {
-      abbreviation: "BB",
-      id: "basesOnBalls",
-      name: "Bases on Balls",
-      sort: "desc",
+      abbreviation: 'BB',
+      id: 'basesOnBalls',
+      name: 'Bases on Balls',
+      sort: 'desc',
     },
     {
-      abbreviation: "BB9",
-      id: "basesOnBallsPerNine",
-      name: "Walks Per 9 Innings",
-      sort: "asc",
+      abbreviation: 'BB9',
+      id: 'basesOnBallsPerNine',
+      name: 'Walks Per 9 Innings',
+      sort: 'asc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "HPB",
-      id: "hitByPitches",
-      name: "Hit-by-pitches",
-      sort: "desc",
+      abbreviation: 'HPB',
+      id: 'hitByPitches',
+      name: 'Hit-by-pitches',
+      sort: 'desc',
     },
-    { abbreviation: "ER", id: "earnedRuns", name: "Earned Runs", sort: "desc" },
+    { abbreviation: 'ER', id: 'earnedRuns', name: 'Earned Runs', sort: 'desc' },
     {
-      abbreviation: "ERA",
-      id: "earnedRunAverage",
-      name: "Earned Run Average",
-      sort: "asc",
+      abbreviation: 'ERA',
+      id: 'earnedRunAverage',
+      name: 'Earned Run Average',
+      sort: 'asc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "H",
-      id: "hitsAllowed",
-      name: "Hits Allowed",
-      sort: "desc",
+      abbreviation: 'H',
+      id: 'hitsAllowed',
+      name: 'Hits Allowed',
+      sort: 'desc',
     },
     {
-      abbreviation: "H9",
-      id: "hitsAllowedPerNine",
-      name: "Hits Allowed Per 9 Innings",
-      sort: "asc",
+      abbreviation: 'H9',
+      id: 'hitsAllowedPerNine',
+      name: 'Hits Allowed Per 9 Innings',
+      sort: 'asc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "HR",
-      id: "homeRuns",
-      name: "Home Runs Allowed",
-      sort: "desc",
+      abbreviation: 'HR',
+      id: 'homeRuns',
+      name: 'Home Runs Allowed',
+      sort: 'desc',
     },
     {
-      abbreviation: "HR9",
-      id: "homeRunsPerNine",
-      name: "Home Runs Allowed Per 9 Innings",
-      sort: "asc",
+      abbreviation: 'HR9',
+      id: 'homeRunsPerNine',
+      name: 'Home Runs Allowed Per 9 Innings',
+      sort: 'asc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "IP",
-      id: "inningsPitched",
-      name: "Innings Pitched",
-      sort: "desc",
+      abbreviation: 'IP',
+      id: 'inningsPitched',
+      name: 'Innings Pitched',
+      sort: 'desc',
     },
-    { abbreviation: "L", id: "losses", name: "Losses", sort: "desc" },
+    { abbreviation: 'L', id: 'losses', name: 'Losses', sort: 'desc' },
     {
-      abbreviation: "P",
-      id: "pitchCount",
-      name: "Pitches Thrown",
-      sort: "desc",
+      abbreviation: 'P',
+      id: 'pitchCount',
+      name: 'Pitches Thrown',
+      sort: 'desc',
     },
     {
-      abbreviation: "QS",
-      id: "qualityStarts",
-      name: "Quality Starts",
-      sort: "desc",
+      abbreviation: 'QS',
+      id: 'qualityStarts',
+      name: 'Quality Starts',
+      sort: 'desc',
     },
-    { abbreviation: "SHO", id: "shutouts", name: "Shutouts", sort: "desc" },
-    { abbreviation: "SO", id: "strikeouts", name: "Strikeouts", sort: "desc" },
+    { abbreviation: 'SHO', id: 'shutouts', name: 'Shutouts', sort: 'desc' },
+    { abbreviation: 'SO', id: 'strikeouts', name: 'Strikeouts', sort: 'desc' },
     {
-      abbreviation: "SO/BB",
-      id: "strikeoutToWalkRatio",
-      name: "Strikeout-to-Walk Ratio",
-      sort: "desc",
+      abbreviation: 'SO/BB',
+      id: 'strikeoutToWalkRatio',
+      name: 'Strikeout-to-Walk Ratio',
+      sort: 'desc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "SO9",
-      id: "strikeoutsPerNine",
-      name: "Strikeouts Per 9 Innings",
-      sort: "desc",
+      abbreviation: 'SO9',
+      id: 'strikeoutsPerNine',
+      name: 'Strikeouts Per 9 Innings',
+      sort: 'desc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "SO%",
-      id: "strikeoutRate",
-      name: "Strikeout Percentage",
-      sort: "desc",
+      abbreviation: 'SO%',
+      id: 'strikeoutRate',
+      name: 'Strikeout Percentage',
+      sort: 'desc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "WHIP",
-      id: "walksAndHitsPerInningPitched",
-      sort: "asc",
-      name: "Walks and Hits Per Inning Pitched",
+      abbreviation: 'WHIP',
+      id: 'walksAndHitsPerInningPitched',
+      sort: 'asc',
+      name: 'Walks and Hits Per Inning Pitched',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "BB%",
-      id: "walkRate",
-      name: "Walk Percentage",
-      sort: "asc",
+      abbreviation: 'BB%',
+      id: 'walkRate',
+      name: 'Walk Percentage',
+      sort: 'asc',
       minimumInningsPerTeamGame: 1,
     },
     {
-      abbreviation: "W-L%",
-      id: "winningPercentage",
-      name: "Winning Percentage",
-      sort: "desc",
+      abbreviation: 'W-L%',
+      id: 'winningPercentage',
+      name: 'Winning Percentage',
+      sort: 'desc',
       minimumInningsPerTeamGame: 1,
     },
-    { abbreviation: "W", id: "wins", name: "Wins", sort: "desc" },
+    { abbreviation: 'W', id: 'wins', name: 'Wins', sort: 'desc' },
   ];
 
-  batterStatCategories.forEach((category) => (category.type = "batting"));
-  pitcherStatCategories.forEach((category) => (category.type = "pitching"));
+  batterStatCategories.forEach((category) => (category.type = 'batting'));
+  pitcherStatCategories.forEach((category) => (category.type = 'pitching'));
 
   return batterStatCategories.concat(pitcherStatCategories);
 }
@@ -468,8 +468,8 @@ function updateCategoryLeaders({
       const leader = leaders[i];
 
       if (
-        (category.sort === "asc" && playerStats[category.id] < leader.value) ||
-        (category.sort === "desc" && playerStats[category.id] > leader.value)
+        (category.sort === 'asc' && playerStats[category.id] < leader.value) ||
+        (category.sort === 'desc' && playerStats[category.id] > leader.value)
       ) {
         const start = leaders.slice(0, i);
         const end = leaders.slice(i);
@@ -526,21 +526,21 @@ async function writeStatLeadersToJson({
   await fs.promises.mkdir(`./data/leaders`, { recursive: true });
 
   const seasonLeadersWriteStream: NodeJS.WritableStream = fs.createWriteStream(
-    "./data/leaders/leaders.json"
+    './data/leaders/leaders.json'
   );
   seasonLeadersWriteStream.write(
     `${JSON.stringify(
       { ...seasonLeaders, allTime: allTimeCategoryLeaders },
       null,
-      "\t"
+      '\t'
     )}\n`
   );
 
   const categoriesWriteStream: NodeJS.WritableStream = fs.createWriteStream(
-    "./data/leaders/categories.json"
+    './data/leaders/categories.json'
   );
   categoriesWriteStream.write(
-    `${JSON.stringify(statCategories, null, "\t")}\n`
+    `${JSON.stringify(statCategories, null, '\t')}\n`
   );
 }
 

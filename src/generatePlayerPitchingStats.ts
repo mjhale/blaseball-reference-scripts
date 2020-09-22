@@ -6,12 +6,12 @@
  * @TODO: Seasonal data should account for player mid-season team changes
  * @WIP
  */
-import fs from "fs";
-import ndjson from "ndjson";
-import deburr from "lodash.deburr";
-import dotenv from "dotenv";
-import hash from "object-hash";
-import merge from "deepmerge";
+import fs from 'fs';
+import ndjson from 'ndjson';
+import deburr from 'lodash.deburr';
+import dotenv from 'dotenv';
+import hash from 'object-hash';
+import merge from 'deepmerge';
 
 dotenv.config();
 
@@ -33,7 +33,7 @@ interface Player {
   lastGameId: string | null;
   lastGameSeason: number | null;
   name: string | null;
-  position: "lineup";
+  position: 'lineup';
   slug: string | null;
 }
 
@@ -44,7 +44,7 @@ let generateStatsFromSeason = 0;
 function getMostRecentSeasonFromStandings() {
   try {
     standingsBySeason = JSON.parse(
-      fs.readFileSync("./data/standings/standings.json", "utf8")
+      fs.readFileSync('./data/standings/standings.json', 'utf8')
     );
 
     generateStatsFromSeason = Number(
@@ -65,7 +65,7 @@ if (process.env.FROM_SEASON !== undefined) {
 }
 
 // Location of feed archive
-const gameDataUpdatesFile = "./tmp/blaseball-log.json";
+const gameDataUpdatesFile = './tmp/blaseball-log.json';
 const pipeline = fs
   .createReadStream(gameDataUpdatesFile)
   .pipe(ndjson.parse({ strict: false }));
@@ -77,7 +77,7 @@ let playerList: Array<Player>;
 // Initialize player list with existing data
 try {
   playerList = JSON.parse(
-    fs.readFileSync("./data/players/pitchers.json", "utf8")
+    fs.readFileSync('./data/players/pitchers.json', 'utf8')
   );
 } catch (error) {
   playerList = [];
@@ -90,13 +90,13 @@ const gameStateHashes = {};
 // Maintain a copy of the previous game state update
 let prevGameStates: any = null;
 
-pipeline.on("error", (error) => {
+pipeline.on('error', (error) => {
   console.log(error);
   return;
 });
 
 // Process game feed logs
-pipeline.on("data", (gameDataUpdate) => {
+pipeline.on('data', (gameDataUpdate) => {
   if (
     gameDataUpdate?.sim?.season &&
     gameDataUpdate.sim.season < generateStatsFromSeason
@@ -137,7 +137,7 @@ pipeline.on("data", (gameDataUpdate) => {
     }
 
     // Normalize ID field to account for old archives and new archives (_id and id)
-    if (!gameState.hasOwnProperty("id") && gameState.hasOwnProperty("_id")) {
+    if (!gameState.hasOwnProperty('id') && gameState.hasOwnProperty('_id')) {
       gameState.id = gameState._id;
     }
 
@@ -215,7 +215,7 @@ pipeline.on("data", (gameDataUpdate) => {
       pitcherSummaries[currPitcher] = createPitcherSummaryObject({
         id: currPitcher,
         name,
-        slug: deburr(name).toLowerCase().replace(/\s/g, "-"),
+        slug: deburr(name).toLowerCase().replace(/\s/g, '-'),
       });
     }
 
@@ -228,7 +228,7 @@ pipeline.on("data", (gameDataUpdate) => {
         name: gameState.awayPitcherName,
         slug: deburr(gameState.awayPitcherName)
           .toLowerCase()
-          .replace(/\s/g, "-"),
+          .replace(/\s/g, '-'),
       });
     }
 
@@ -241,7 +241,7 @@ pipeline.on("data", (gameDataUpdate) => {
         name: gameState.homePitcherName,
         slug: deburr(gameState.homePitcherName)
           .toLowerCase()
-          .replace(/\s/g, "-"),
+          .replace(/\s/g, '-'),
       });
     }
 
@@ -619,12 +619,12 @@ pipeline.on("data", (gameDataUpdate) => {
 });
 
 // Perform final calculations after feed is processed
-pipeline.on("end", async () => {
+pipeline.on('end', async () => {
   let existingPitcherSummaries;
 
   try {
     existingPitcherSummaries = JSON.parse(
-      fs.readFileSync("./data/pitching/pitchers.json", "utf8")
+      fs.readFileSync('./data/pitching/pitchers.json', 'utf8')
     );
   } catch (error) {
     existingPitcherSummaries = null;
@@ -641,7 +641,7 @@ pipeline.on("end", async () => {
         pitcherSummaries[pitcher],
         {
           customMerge: (key) => {
-            if (key === "seasons" || key === "postseasons") {
+            if (key === 'seasons' || key === 'postseasons') {
               return (a, b) => {
                 // Only overwrite existing data with tracked seasons
                 let trackedSeasons = {};
@@ -839,19 +839,19 @@ pipeline.on("end", async () => {
   }
 
   // Output objects to JSON files
-  await fs.promises.mkdir("./data/pitching", { recursive: true });
+  await fs.promises.mkdir('./data/pitching', { recursive: true });
   const pitcherSummariesWriteStream = fs.createWriteStream(
-    "./data/pitching/pitchers.json"
+    './data/pitching/pitchers.json'
   );
   pitcherSummariesWriteStream.write(
-    `${JSON.stringify({ ...pitcherSummaries }, null, "\t")}\n`
+    `${JSON.stringify({ ...pitcherSummaries }, null, '\t')}\n`
   );
   pitcherSummariesWriteStream.end();
 
   Object.keys(pitcherSummaries).forEach(async (pitcher) => {
     // Output individual pitchers summaries
     const encodedPitcherName = encodeURI(
-      pitcherSummaries[pitcher].name.toLowerCase().replace(/\s/g, "-")
+      pitcherSummaries[pitcher].name.toLowerCase().replace(/\s/g, '-')
     );
     await fs.promises.mkdir(`./data/pitching/${encodedPitcherName}`, {
       recursive: true,
@@ -860,7 +860,7 @@ pipeline.on("end", async () => {
       `./data/pitching/${encodedPitcherName}/summary.json`
     );
     pitcherSummaryWriteStream.write(
-      `${JSON.stringify({ ...pitcherSummaries[pitcher] }, null, "\t")}\n`
+      `${JSON.stringify({ ...pitcherSummaries[pitcher] }, null, '\t')}\n`
     );
     pitcherSummaryWriteStream.end();
   });
@@ -868,9 +868,9 @@ pipeline.on("end", async () => {
   // Append pitcher to list of all players
   await fs.promises.mkdir(`./data/players`, { recursive: true });
   const playerListWriteStream = fs.createWriteStream(
-    "./data/players/pitchers.json"
+    './data/players/pitchers.json'
   );
-  playerListWriteStream.write(`${JSON.stringify(playerList, null, "\t")}\n`);
+  playerListWriteStream.write(`${JSON.stringify(playerList, null, '\t')}\n`);
   playerListWriteStream.end();
 });
 
@@ -982,9 +982,9 @@ function createPlayerObject({
     lastGameId: relativeGameState.id,
     lastGameSeason: relativeGameState.season,
     name: null,
-    position: "rotation",
-    slug: initialValues.hasOwnProperty("name")
-      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, "-")
+    position: 'rotation',
+    slug: initialValues.hasOwnProperty('name')
+      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, '-')
       : null,
   };
 

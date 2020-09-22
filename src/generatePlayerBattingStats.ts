@@ -4,12 +4,12 @@
  * - Tailored to blaseball-reference frontend usage
  * - @WIP
  */
-import fs from "fs";
-import ndjson from "ndjson";
-import deburr from "lodash.deburr";
-import dotenv from "dotenv";
-import hash from "object-hash";
-import merge from "deepmerge";
+import fs from 'fs';
+import ndjson from 'ndjson';
+import deburr from 'lodash.deburr';
+import dotenv from 'dotenv';
+import hash from 'object-hash';
+import merge from 'deepmerge';
 
 dotenv.config();
 
@@ -31,7 +31,7 @@ interface Player {
   lastGameId: string | null;
   lastGameSeason: number | null;
   name: string | null;
-  position: "lineup";
+  position: 'lineup';
   slug: string | null;
 }
 
@@ -42,7 +42,7 @@ let generateStatsFromSeason = 0;
 function getMostRecentSeasonFromStandings() {
   try {
     standingsBySeason = JSON.parse(
-      fs.readFileSync("./data/standings/standings.json", "utf8")
+      fs.readFileSync('./data/standings/standings.json', 'utf8')
     );
 
     generateStatsFromSeason = Number(
@@ -63,7 +63,7 @@ if (process.env.FROM_SEASON !== undefined) {
 }
 
 // Location of feed archive
-const gameDataUpdatesFile = "./tmp/blaseball-log.json";
+const gameDataUpdatesFile = './tmp/blaseball-log.json';
 const pipeline = fs
   .createReadStream(gameDataUpdatesFile)
   .pipe(ndjson.parse({ strict: false }));
@@ -75,7 +75,7 @@ let playerList: Array<Player>;
 // Initialize player list with existing data
 try {
   playerList = JSON.parse(
-    fs.readFileSync("./data/players/batters.json", "utf8")
+    fs.readFileSync('./data/players/batters.json', 'utf8')
   );
 } catch (error) {
   playerList = [];
@@ -91,12 +91,12 @@ let prevGameStates: any = null;
 // Maintain a list of seen batters by game id
 const seenBatters = {};
 
-pipeline.on("error", (error) => {
+pipeline.on('error', (error) => {
   console.log(error);
 });
 
 // Process game feed logs
-pipeline.on("data", (gameDataUpdate) => {
+pipeline.on('data', (gameDataUpdate) => {
   if (
     gameDataUpdate?.sim?.season &&
     gameDataUpdate.sim.season < generateStatsFromSeason
@@ -133,7 +133,7 @@ pipeline.on("data", (gameDataUpdate) => {
   // Iterate through each game in current tick
   currGameStates.forEach((gameState) => {
     // Normalize ID field to account for old archives and new archives (_id and id)
-    if (!gameState.hasOwnProperty("id") && gameState.hasOwnProperty("_id")) {
+    if (!gameState.hasOwnProperty('id') && gameState.hasOwnProperty('_id')) {
       gameState.id = gameState._id;
     }
 
@@ -406,7 +406,9 @@ pipeline.on("data", (gameDataUpdate) => {
     // Increment runs scored for following scenarios
     // [x] - Lang Richardson hits a Single! 1 scores.
     // [x] - Juice Collins hits a Single! 2s score.
-    const numberOfRunsScoredMatch = gameState.lastUpdate.match(/(\d+)s? scores?\b/i);
+    const numberOfRunsScoredMatch = gameState.lastUpdate.match(
+      /(\d+)s? scores?\b/i
+    );
     if (prevGameState && numberOfRunsScoredMatch !== null) {
       const runsScored = Number(numberOfRunsScoredMatch[1]);
       const prevBasesRunners = prevGameState.baseRunners.slice();
@@ -428,12 +430,15 @@ pipeline.on("data", (gameDataUpdate) => {
           }
         }
       }
-    // Increment runs scored for following scenarios, assuming runner on third is only runner to score
-    // [x] - José Haley reaches on fielder's choice. Cell Barajas out at second base. Ronan Combs scores
-    // [x] - Marco Stink  scores on the sacrifice.
-    // [x] - Morrow Doyle hit a sacrifice fly. Esme Ramsey tags up and scores!
-    // [x] - Paula Mason draws a walk. Baby Urlacher scores!
-    } else if (prevGameState && gameState.lastUpdate.match(/ scores?\b/i) !== null) {
+      // Increment runs scored for following scenarios, assuming runner on third is only runner to score
+      // [x] - José Haley reaches on fielder's choice. Cell Barajas out at second base. Ronan Combs scores
+      // [x] - Marco Stink  scores on the sacrifice.
+      // [x] - Morrow Doyle hit a sacrifice fly. Esme Ramsey tags up and scores!
+      // [x] - Paula Mason draws a walk. Baby Urlacher scores!
+    } else if (
+      prevGameState &&
+      gameState.lastUpdate.match(/ scores?\b/i) !== null
+    ) {
       const scoringRunnerId = prevGameState.baseRunners[0];
 
       // Increment runs scored for runner on third
@@ -654,12 +659,12 @@ pipeline.on("data", (gameDataUpdate) => {
   prevGameStates = currGameStates;
 });
 
-pipeline.on("end", async () => {
+pipeline.on('end', async () => {
   let existingBatterSummaries;
 
   try {
     existingBatterSummaries = JSON.parse(
-      fs.readFileSync("./data/batting/batters.json", "utf8")
+      fs.readFileSync('./data/batting/batters.json', 'utf8')
     );
   } catch (error) {
     existingBatterSummaries = null;
@@ -676,7 +681,7 @@ pipeline.on("end", async () => {
         batterSummaries[batter],
         {
           customMerge: (key) => {
-            if (key === "seasons" || key === "postseasons") {
+            if (key === 'seasons' || key === 'postseasons') {
               return (a, b) => {
                 // Only overwrite existing data with tracked seasons
                 let trackedSeasons = {};
@@ -844,12 +849,12 @@ pipeline.on("end", async () => {
   }
 
   // Output objects to JSON files
-  await fs.promises.mkdir("./data/batting", { recursive: true });
+  await fs.promises.mkdir('./data/batting', { recursive: true });
   const batterSummariesWriteStream = fs.createWriteStream(
-    "./data/batting/batters.json"
+    './data/batting/batters.json'
   );
   batterSummariesWriteStream.write(
-    `${JSON.stringify({ ...batterSummaries }, null, "\t")}\n`
+    `${JSON.stringify({ ...batterSummaries }, null, '\t')}\n`
   );
   batterSummariesWriteStream.end();
 
@@ -862,7 +867,7 @@ pipeline.on("end", async () => {
       `./data/batting/${batterSummaries[batter].slug}/summary.json`
     );
     batterSummaryWriteStream.write(
-      `${JSON.stringify({ ...batterSummaries[batter] }, null, "\t")}\n`
+      `${JSON.stringify({ ...batterSummaries[batter] }, null, '\t')}\n`
     );
     batterSummaryWriteStream.end();
   });
@@ -870,9 +875,9 @@ pipeline.on("end", async () => {
   // Append batter to list of all players
   await fs.promises.mkdir(`./data/players`, { recursive: true });
   const playerListWriteStream = fs.createWriteStream(
-    "./data/players/batters.json"
+    './data/players/batters.json'
   );
-  playerListWriteStream.write(`${JSON.stringify(playerList, null, "\t")}\n`);
+  playerListWriteStream.write(`${JSON.stringify(playerList, null, '\t')}\n`);
   playerListWriteStream.end();
 });
 
@@ -930,8 +935,8 @@ function createBatterSummaryObject(initialValues) {
     id: null,
     name: null,
     seasons: {},
-    slug: initialValues.hasOwnProperty("name")
-      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, "-")
+    slug: initialValues.hasOwnProperty('name')
+      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, '-')
       : null,
     postseasons: {},
   };
@@ -972,9 +977,9 @@ function createPlayerObject({
     lastGameId: relativeGameState.id,
     lastGameSeason: relativeGameState.season,
     name: null,
-    position: "lineup",
-    slug: initialValues.hasOwnProperty("name")
-      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, "-")
+    position: 'lineup',
+    slug: initialValues.hasOwnProperty('name')
+      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, '-')
       : null,
   };
 

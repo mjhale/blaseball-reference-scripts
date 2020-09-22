@@ -1,5 +1,5 @@
-import Bottleneck from "bottleneck";
-import { fetchData } from "./utils";
+import Bottleneck from 'bottleneck';
+import { fetchData } from './utils';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
 
@@ -16,9 +16,9 @@ export default async function fetchGameResults({
 
   const gameResults: GameResults = {};
 
-  const url = new URL("https://www.blaseball.com/database/games");
-  url.searchParams.set("season", season.toString());
-  url.searchParams.set("day", day.toString());
+  const url = new URL('https://www.blaseball.com/database/games');
+  url.searchParams.set('season', season.toString());
+  url.searchParams.set('day', day.toString());
   let games = await limiter.schedule(fetchData, url.toString());
   // let hasActiveGame = false;
 
@@ -38,9 +38,9 @@ export default async function fetchGameResults({
     day += 1;
 
     // Begin new fetch loop
-    const url = new URL("https://www.blaseball.com/database/games");
-    url.searchParams.set("season", season.toString());
-    url.searchParams.set("day", day.toString());
+    const url = new URL('https://www.blaseball.com/database/games');
+    url.searchParams.set('season', season.toString());
+    url.searchParams.set('day', day.toString());
     games = await limiter.schedule(fetchData, url.toString());
 
     // When at the end of a season, try to jump to next season
@@ -49,9 +49,9 @@ export default async function fetchGameResults({
       day = 0;
 
       // Begin new fetch loop
-      const url = new URL("https://www.blaseball.com/database/games");
-      url.searchParams.set("season", season.toString());
-      url.searchParams.set("day", day.toString());
+      const url = new URL('https://www.blaseball.com/database/games');
+      url.searchParams.set('season', season.toString());
+      url.searchParams.set('day', day.toString());
       games = await limiter.schedule(fetchData, url.toString());
     }
   }

@@ -1,7 +1,7 @@
-import cloneDeep from "lodash.clonedeep";
-import fetchGameResults from "./fetchGameResults";
-import fs from "fs";
-import merge from "deepmerge";
+import cloneDeep from 'lodash.clonedeep';
+import fetchGameResults from './fetchGameResults';
+import fs from 'fs';
+import merge from 'deepmerge';
 
 async function generateSchedules() {
   let games: {
@@ -15,7 +15,7 @@ async function generateSchedules() {
 
   try {
     games = await JSON.parse(
-      fs.readFileSync("./data/gameResults.json", "utf8")
+      fs.readFileSync('./data/gameResults.json', 'utf8')
     );
 
     startingSeason = Object.keys(games)
@@ -58,11 +58,11 @@ async function generateSchedules() {
   });
 
   for (const season of Object.keys(games)) {
-    await fs.promises.mkdir("./data/schedules/bySeason/", { recursive: true });
+    await fs.promises.mkdir('./data/schedules/bySeason/', { recursive: true });
 
     fs.writeFile(
       `./data/schedules/bySeason/${season}.json`,
-      `${JSON.stringify(games[season], null, "\t")}\n`,
+      `${JSON.stringify(games[season], null, '\t')}\n`,
       function (err) {
         if (err) {
           console.log(err);
@@ -72,7 +72,7 @@ async function generateSchedules() {
   }
 
   try {
-    teams = await JSON.parse(fs.readFileSync("./data/teams.json", "utf8"));
+    teams = await JSON.parse(fs.readFileSync('./data/teams.json', 'utf8'));
   } catch (err) {
     console.log(err);
   }
@@ -100,7 +100,7 @@ async function generateSchedules() {
 
     fs.writeFile(
       `./data/teams/${team.slug}/schedule.json`,
-      `${JSON.stringify(teamGames, null, "\t")}\n`,
+      `${JSON.stringify(teamGames, null, '\t')}\n`,
       function (err) {
         if (err) {
           console.log(err);

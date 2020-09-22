@@ -1,4 +1,4 @@
-import fetch from "@adobe/node-fetch-retry";
+import fetch from '@adobe/node-fetch-retry';
 
 export async function fetchData(link: string): Promise<any> {
   const request = await fetch(link, {

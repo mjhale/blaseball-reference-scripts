@@ -1,5 +1,5 @@
-import deburr from "lodash.deburr";
-import fs from "fs";
+import deburr from 'lodash.deburr';
+import fs from 'fs';
 
 // Type definitions
 interface Player {
@@ -34,12 +34,12 @@ interface TeamStats {
 (async () => {
   // Load pre-generated teams and league-wide pitcher, and batter stats
   const batters = JSON.parse(
-    fs.readFileSync("./data/batting/batters.json", "utf8")
+    fs.readFileSync('./data/batting/batters.json', 'utf8')
   );
   const pitchers = JSON.parse(
-    fs.readFileSync("./data/pitching/pitchers.json", "utf8")
+    fs.readFileSync('./data/pitching/pitchers.json', 'utf8')
   );
-  const teams = JSON.parse(fs.readFileSync("./data/teams.json", "utf8"));
+  const teams = JSON.parse(fs.readFileSync('./data/teams.json', 'utf8'));
 
   const allTeamStats: Array<TeamStats> = [];
 
@@ -48,7 +48,7 @@ interface TeamStats {
     // Generate a deburred slug for potential fs issues
     const teamSlug: string = deburr(team.fullName)
       .toLowerCase()
-      .replace(/\s/g, "-");
+      .replace(/\s/g, '-');
 
     const { id: teamId, ...teamSpread } = team;
 
@@ -74,7 +74,7 @@ interface TeamStats {
       const player: Player = pitchers[playerId];
 
       // Season stats
-      if (Object.hasOwnProperty.call(player, "seasons")) {
+      if (Object.hasOwnProperty.call(player, 'seasons')) {
         for (const season in player.seasons) {
           const seasonStats: PlayerStats = {
             ...player.seasons[season],
@@ -99,7 +99,7 @@ interface TeamStats {
       }
 
       // Postseason stats
-      if (Object.hasOwnProperty.call(player, "postseasons")) {
+      if (Object.hasOwnProperty.call(player, 'postseasons')) {
         for (const season in player.postseasons) {
           const seasonStats: PlayerStats = {
             ...player.postseasons[season],
@@ -131,7 +131,7 @@ interface TeamStats {
       const player: Player = batters[playerId];
 
       // Season stats
-      if (Object.hasOwnProperty.call(player, "seasons")) {
+      if (Object.hasOwnProperty.call(player, 'seasons')) {
         for (const season in player.seasons) {
           const seasonStats: PlayerStats = {
             ...player.seasons[season],
@@ -156,7 +156,7 @@ interface TeamStats {
       }
 
       // Postseason stats
-      if (Object.hasOwnProperty.call(player, "postseasons")) {
+      if (Object.hasOwnProperty.call(player, 'postseasons')) {
         for (const season in player.postseasons) {
           const seasonStats: PlayerStats = {
             ...player.postseasons[season],
@@ -187,7 +187,7 @@ interface TeamStats {
     // Output team object to json
     fs.writeFile(
       `./data/teams/${teamSlug}/playerStats.json`,
-      `${JSON.stringify(teamStats, null, "\t")}\n`,
+      `${JSON.stringify(teamStats, null, '\t')}\n`,
       function (err) {
         if (err) {
           console.log(err);
@@ -199,8 +199,8 @@ interface TeamStats {
   }
   // Output team object to json
   fs.writeFile(
-    "./data/teams/teams.json",
-    `${JSON.stringify(allTeamStats, null, "\t")}\n`,
+    './data/teams/teams.json',
+    `${JSON.stringify(allTeamStats, null, '\t')}\n`,
     function (err) {
       if (err) {
         console.log(err);
