@@ -105,26 +105,31 @@ type Division = {
   subleague: string;
 };
 
+type SubleaguesAndDivisionsBySeason = {
+  seasons: {
+    [season: string]: {
+      divisions: Array<{
+        id: string;
+        name: string;
+        subleague: string;
+        teams: Array<string>;
+      }>;
+      subleagues: Array<{
+        divisions: Array<string>;
+        id: string;
+        name: string;
+        teams: Array<string>;
+      }>;
+    };
+  };
+};
+
 function main() {
   generateStandings();
 }
 
-const subleaguesBySeason = {
-  '0': ['The Good League', 'The Evil League'],
-  '1': ['The Good League', 'The Evil League'],
-  '2': ['The Good League', 'The Evil League'],
-  '3': ['The Good League', 'The Evil League'],
-  '4': ['The Good League', 'The Evil League'],
-  '5': ['The Mild League', 'The Wild League'],
-  '6': ['The Mild League', 'The Wild League'],
-  '7': ['The Mild League', 'The Wild League'],
-  '8': ['The Mild League', 'The Wild League'],
-  '9': ['The Mild League', 'The Wild League'],
-  '10': ['The Mild League', 'The Wild League'],
-};
-
 async function generateStandings() {
-  const { divisions, subleagues } = await fetchSubleaguesAndDivisions();
+  const subleaguesAndDivisionsBySeason: SubleaguesAndDivisionsBySeason = await fetchSubleaguesAndDivisions();
 
   let teamRecords: Array<TeamRecord> = [];
   const divisionRecordsBySeason: {
@@ -197,54 +202,42 @@ async function generateStandings() {
         const loser: 'away' | 'home' =
           game.homeScore > game.awayScore ? 'away' : 'home';
 
-        const winnerSubleague: Subleague | undefined = subleagues
-          .filter((subleague) => {
-            return subleaguesBySeason[game.season].find(
-              (currSeasonSubleagueName) => {
-                return currSeasonSubleagueName === subleague.name;
-              }
-            );
-          })
-          .find((subleague) => {
-            return subleague.teams.find(
-              (team) => team === game[`${winner}Team`]
-            );
-          });
+        const winnerSubleague:
+          | Subleague
+          | undefined = subleaguesAndDivisionsBySeason.seasons[
+          season
+        ].subleagues.find((subleague) => {
+          return subleague.teams.find((team) => team === game[`${winner}Team`]);
+        });
 
-        const loserSubleague: Subleague | undefined = subleagues
-          .filter((subleague) => {
-            return subleaguesBySeason[game.season].find(
-              (currSeasonSubleagueName) => {
-                return currSeasonSubleagueName === subleague.name;
-              }
-            );
-          })
-          .find((subleague) => {
-            return subleague.teams.find(
-              (team) => team === game[`${loser}Team`]
-            );
-          });
+        const loserSubleague:
+          | Subleague
+          | undefined = subleaguesAndDivisionsBySeason.seasons[
+          season
+        ].subleagues.find((subleague) => {
+          return subleague.teams.find((team) => team === game[`${loser}Team`]);
+        });
 
         const currSeasonDivisions: Array<string> = [
-          ...(winnerSubleague?.divisions || []),
-          ...(loserSubleague?.divisions || []),
+          ...(winnerSubleague?.divisions ?? []),
+          ...(loserSubleague?.divisions ?? []),
         ];
 
         const winnerDivision:
           | Division
-          | undefined = divisions
-          .filter((division) => currSeasonDivisions.includes(division.id))
-          .find((division) =>
-            division.teams.find((team) => team === game[`${winner}Team`])
-          );
+          | undefined = subleaguesAndDivisionsBySeason.seasons[
+          season
+        ].divisions.find((division) =>
+          division.teams.find((team) => team === game[`${winner}Team`])
+        );
 
         const loserDivision:
           | Division
-          | undefined = divisions
-          .filter((division) => currSeasonDivisions.includes(division.id))
-          .find((division) =>
-            division.teams.find((team) => team === game[`${loser}Team`])
-          );
+          | undefined = subleaguesAndDivisionsBySeason.seasons[
+          season
+        ].divisions.find((division) =>
+          division.teams.find((team) => team === game[`${loser}Team`])
+        );
 
         // Attempt to locate existing team records
         let winningTeamRecords = teamRecords.find(
@@ -821,12 +814,17 @@ function createTeamRecord(initialValues: any): TeamRecord {
   return Object.assign({}, defaults, initialValues);
 }
 
-async function fetchSubleaguesAndDivisions(): Promise<{
-  subleagues: Array<Subleague>;
-  divisions: Array<Division>;
-}> {
+async function fetchSubleaguesAndDivisions(): Promise<
+  SubleaguesAndDivisionsBySeason
+> {
   let hasCachedResponse;
   let response;
+
+  const simulationData: any = await limiter.schedule(
+    fetchData,
+    'https://www.blaseball.com/database/simulationData'
+  );
+  const currentSeason = simulationData.season;
 
   try {
     const cachedResponse = JSON.parse(
@@ -834,8 +832,12 @@ async function fetchSubleaguesAndDivisions(): Promise<{
     );
 
     const dataJson: {
-      subleagues: Array<Subleague>;
-      divisions: Array<Division>;
+      seasons: {
+        [season: string]: {
+          subleagues: Array<Subleague>;
+          divisions: Array<Division>;
+        };
+      };
       lastUpdatedAt: number;
     } = cachedResponse;
 
@@ -847,8 +849,11 @@ async function fetchSubleaguesAndDivisions(): Promise<{
 
     hasCachedResponse = true;
     response = {
-      divisions: dataJson.divisions,
-      subleagues: dataJson.subleagues,
+      seasons: {
+        ...dataJson.seasons,
+        // divisions: dataJson.seasons[currentSeason].divisions,
+        // subleagues: dataJson.seasons[currentSeason].subleagues,
+      },
     };
   } catch {
     hasCachedResponse = false;
@@ -858,8 +863,10 @@ async function fetchSubleaguesAndDivisions(): Promise<{
     return response;
   }
 
-  const subleagues: { [subleagueId: string]: Subleague } = response.subleagues;
-  const divisions: { [divisionId: string]: Division } = response.divisions;
+  const subleagues: { [subleagueId: string]: Subleague } =
+    response.seasons?.[currentSeason]?.subleagues;
+  const divisions: { [divisionId: string]: Division } =
+    response.seasons?.[currentSeason]?.divisions;
 
   const ILB_ID = 'd8545021-e9fc-48a3-af74-48685950a183';
   const league: any = await limiter.schedule(
@@ -901,8 +908,13 @@ async function fetchSubleaguesAndDivisions(): Promise<{
   }
 
   response = {
-    divisions: Object.values(divisions),
-    subleagues: Object.values(subleagues),
+    seasons: {
+      ...response.seasons,
+      [currentSeason]: {
+        divisions: Object.values(divisions),
+        subleagues: Object.values(subleagues),
+      },
+    },
   };
 
   fs.writeFile(
