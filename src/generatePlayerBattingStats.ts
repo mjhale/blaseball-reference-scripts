@@ -255,47 +255,81 @@ pipeline.on('data', (gameDataUpdate) => {
 
     // Initialize batter stat objects for newly recorded seasons and postseasons
     // - Postseasons
-    if (
-      currBatter &&
-      gameState.isPostseason &&
-      !batterSummaries[currBatter].postseasons.hasOwnProperty(gameState.season)
-    ) {
-      batterSummaries[currBatter].postseasons[
-        gameState.season
-      ] = initialBatterStatsObject();
-    }
+    if (gameState.isPostseason) {
+      if (currBatter) {
+        if (
+          !batterSummaries[currBatter].postseasons.hasOwnProperty(
+            gameState.season
+          )
+        ) {
+          batterSummaries[currBatter].postseasons[
+            gameState.season
+          ] = initialBatterStatsObject();
+        }
 
-    if (
-      prevBatter &&
-      currBatter !== prevBatter &&
-      gameState.isPostseason &&
-      !batterSummaries[prevBatter].postseasons.hasOwnProperty(gameState.season)
-    ) {
-      batterSummaries[prevBatter].postseasons[
-        gameState.season
-      ] = initialBatterStatsObject();
+        batterSummaries[currBatter].postseasons[
+          gameState.season
+        ].team = currBatterTeamId;
+        batterSummaries[currBatter].postseasons[
+          gameState.season
+        ].teamName = currBatterTeamName;
+      }
+
+      if (prevBatter && currBatter !== prevBatter) {
+        if (
+          !batterSummaries[prevBatter].postseasons.hasOwnProperty(
+            gameState.season
+          )
+        ) {
+          batterSummaries[prevBatter].postseasons[
+            gameState.season
+          ] = initialBatterStatsObject();
+        }
+
+        batterSummaries[prevBatter].postseasons[
+          gameState.season
+        ].team = prevBatterTeamId;
+        batterSummaries[prevBatter].postseasons[
+          gameState.season
+        ].teamName = prevBatterTeamName;
+      }
     }
 
     // - Seasons
-    if (
-      currBatter &&
-      !gameState.isPostseason &&
-      !batterSummaries[currBatter].seasons.hasOwnProperty(gameState.season)
-    ) {
-      batterSummaries[currBatter].seasons[
-        gameState.season
-      ] = initialBatterStatsObject();
-    }
+    if (!gameState.isPostseason) {
+      if (currBatter) {
+        if (
+          !batterSummaries[currBatter].seasons.hasOwnProperty(gameState.season)
+        ) {
+          batterSummaries[currBatter].seasons[
+            gameState.season
+          ] = initialBatterStatsObject();
+        }
 
-    if (
-      prevBatter &&
-      currBatter !== prevBatter &&
-      !gameState.isPostseason &&
-      !batterSummaries[prevBatter].seasons.hasOwnProperty(gameState.season)
-    ) {
-      batterSummaries[prevBatter].seasons[
-        gameState.season
-      ] = initialBatterStatsObject();
+        batterSummaries[currBatter].seasons[
+          gameState.season
+        ].team = currBatterTeamId;
+        batterSummaries[currBatter].seasons[
+          gameState.season
+        ].teamName = currBatterTeamName;
+      }
+
+      if (prevBatter && currBatter !== prevBatter) {
+        if (
+          !batterSummaries[prevBatter].seasons.hasOwnProperty(gameState.season)
+        ) {
+          batterSummaries[prevBatter].seasons[
+            gameState.season
+          ] = initialBatterStatsObject();
+        }
+
+        batterSummaries[prevBatter].seasons[
+          gameState.season
+        ].team = prevBatterTeamId;
+        batterSummaries[prevBatter].seasons[
+          gameState.season
+        ].teamName = prevBatterTeamName;
+      }
     }
 
     // Helper variables for various stat tracking scenarios
@@ -389,7 +423,7 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment runs batted in
     if (
       prevBatterSummary &&
-      gameState.lastUpdate.match(/(home run|scores|grand slam)/i) !== null
+      gameState.lastUpdate.match(/(home run|score|grand slam)/i) !== null
     ) {
       prevBatterSummary.runsBattedIn +=
         gameState.halfInningScore - prevGameState.halfInningScore;
@@ -698,6 +732,30 @@ pipeline.on('end', async () => {
                   ...a,
                   ...trackedSeasons,
                 };
+              };
+            }
+
+            if (key === 'aliases') {
+              return (a, b) => {
+                const aliases = new Set();
+                a.forEach((alias) => aliases.add(alias));
+                b.forEach((alias) => aliases.add(alias));
+
+                return Array.from(aliases);
+              };
+            }
+
+            if (
+              [
+                'debutDay',
+                'debutGameId',
+                'debutSeason',
+                'debutTeamId',
+                'debutTeamName',
+              ].includes(key)
+            ) {
+              return (a, b) => {
+                return a !== null && a.length > 0 ? a : b;
               };
             }
           },

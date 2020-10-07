@@ -277,7 +277,7 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     if (currPitcher !== awayPitcher) {
-      if (playerList.find((p) => p.id === awayPitcher) === undefined) {
+      if (!playerList.find((p) => p.id === awayPitcher)) {
         playerList.push(
           createPlayerObject({
             initialValues: {
@@ -313,7 +313,7 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     if (currPitcher !== homePitcher) {
-      if (playerList.find((p) => p.id === homePitcher) === undefined) {
+      if (!playerList.find((p) => p.id === homePitcher)) {
         playerList.push(
           createPlayerObject({
             initialValues: {
@@ -350,69 +350,109 @@ pipeline.on('data', (gameDataUpdate) => {
 
     // Initialize pitcher stat objects for newly recorded seasons and postseasons
     // - Postseasons
-    if (
-      gameState.isPostseason &&
-      !pitcherSummaries[currPitcher].postseasons.hasOwnProperty(
-        gameState.season
-      )
-    ) {
-      pitcherSummaries[currPitcher].postseasons[
-        gameState.season
-      ] = initialPitcherStatsObject();
-    }
+    if (gameState.isPostseason) {
+      if (
+        !pitcherSummaries[currPitcher].postseasons.hasOwnProperty(
+          gameState.season
+        )
+      ) {
+        pitcherSummaries[currPitcher].postseasons[
+          gameState.season
+        ] = initialPitcherStatsObject();
+      } else {
+        pitcherSummaries[currPitcher].postseasons[
+          gameState.season
+        ].team = currPitcherTeamId;
+        pitcherSummaries[currPitcher].postseasons[
+          gameState.season
+        ].teamName = currPitcherTeamName;
+      }
 
-    if (
-      currPitcher !== awayPitcher &&
-      gameState.isPostseason &&
-      !pitcherSummaries[awayPitcher].postseasons.hasOwnProperty(
-        gameState.season
-      )
-    ) {
-      pitcherSummaries[awayPitcher].postseasons[
-        gameState.season
-      ] = initialPitcherStatsObject();
-    }
+      if (currPitcher !== awayPitcher) {
+        if (
+          !pitcherSummaries[awayPitcher].postseasons.hasOwnProperty(
+            gameState.season
+          )
+        ) {
+          pitcherSummaries[awayPitcher].postseasons[
+            gameState.season
+          ] = initialPitcherStatsObject();
+        }
 
-    if (
-      currPitcher !== homePitcher &&
-      gameState.isPostseason &&
-      !pitcherSummaries[homePitcher].postseasons.hasOwnProperty(
-        gameState.season
-      )
-    ) {
-      pitcherSummaries[homePitcher].postseasons[
-        gameState.season
-      ] = initialPitcherStatsObject();
+        pitcherSummaries[awayPitcher].postseasons[gameState.season].team =
+          gameState.awayTeam;
+        pitcherSummaries[awayPitcher].postseasons[gameState.season].teamName =
+          gameState.awayTeamName;
+      }
+
+      if (currPitcher !== homePitcher) {
+        if (
+          !pitcherSummaries[homePitcher].postseasons.hasOwnProperty(
+            gameState.season
+          )
+        ) {
+          pitcherSummaries[homePitcher].postseasons[
+            gameState.season
+          ] = initialPitcherStatsObject();
+        }
+
+        pitcherSummaries[homePitcher].postseasons[gameState.season].team =
+          gameState.homeTeam;
+        pitcherSummaries[homePitcher].postseasons[gameState.season].teamName =
+          gameState.homeTeamName;
+      }
     }
 
     // - Seasons
-    if (
-      !gameState.isPostseason &&
-      !pitcherSummaries[currPitcher].seasons.hasOwnProperty(gameState.season)
-    ) {
+    if (!gameState.isPostseason) {
+      if (
+        !pitcherSummaries[currPitcher].seasons.hasOwnProperty(gameState.season)
+      ) {
+        pitcherSummaries[currPitcher].seasons[
+          gameState.season
+        ] = initialPitcherStatsObject();
+      }
+
       pitcherSummaries[currPitcher].seasons[
         gameState.season
-      ] = initialPitcherStatsObject();
-    }
-
-    if (
-      currPitcher !== awayPitcher &&
-      !gameState.isPostseason &&
-      !pitcherSummaries[awayPitcher].seasons.hasOwnProperty(gameState.season)
-    ) {
-      pitcherSummaries[awayPitcher].seasons[
+      ].team = currPitcherTeamId;
+      pitcherSummaries[currPitcher].seasons[
         gameState.season
-      ] = initialPitcherStatsObject();
-    }
+      ].teamName = currPitcherTeamName;
 
-    if (
-      currPitcher !== homePitcher &&
-      !gameState.isPostseason &&
-      !pitcherSummaries[homePitcher].seasons.hasOwnProperty(gameState.season)
-    ) {
-      pitcherSummaries[homePitcher].seasons[
-        gameState.season
-      ] = initialPitcherStatsObject();
+      if (currPitcher !== awayPitcher) {
+        if (
+          !pitcherSummaries[awayPitcher].seasons.hasOwnProperty(
+            gameState.season
+          )
+        ) {
+          pitcherSummaries[awayPitcher].seasons[
+            gameState.season
+          ] = initialPitcherStatsObject();
+        }
+
+        pitcherSummaries[awayPitcher].seasons[gameState.season].team =
+          gameState.awayTeam;
+        pitcherSummaries[awayPitcher].seasons[gameState.season].teamName =
+          gameState.awayTeamName;
+      }
+
+      if (currPitcher !== homePitcher) {
+        if (
+          !pitcherSummaries[homePitcher].seasons.hasOwnProperty(
+            gameState.season
+          )
+        ) {
+          pitcherSummaries[homePitcher].seasons[
+            gameState.season
+          ] = initialPitcherStatsObject();
+        }
+
+        pitcherSummaries[homePitcher].seasons[gameState.season].team =
+          gameState.homeTeam;
+        pitcherSummaries[homePitcher].seasons[gameState.season].teamName =
+          gameState.homeTeamName;
+      }
     }
 
     // Additional helper variables for various stat tracking scenarios
@@ -649,8 +689,10 @@ pipeline.on('end', async () => {
                 for (const season of Object.keys(b).sort(
                   (a, b) => Number(a) - Number(b)
                 )) {
-                  if (Number(season) >= generateStatsFromSeason) {
-                    trackedSeasons = { ...trackedSeasons, [season]: b[season] };
+                  if (Number(season) >= Number(generateStatsFromSeason)) {
+                    trackedSeasons = merge(trackedSeasons, {
+                      [season]: b[season],
+                    });
                   }
                 }
 
@@ -658,6 +700,30 @@ pipeline.on('end', async () => {
                   ...a,
                   ...trackedSeasons,
                 };
+              };
+            }
+
+            if (key === 'aliases') {
+              return (a, b) => {
+                const aliases = new Set();
+                a.forEach((alias) => aliases.add(alias));
+                b.forEach((alias) => aliases.add(alias));
+
+                return Array.from(aliases);
+              };
+            }
+
+            if (
+              [
+                'debutDay',
+                'debutGameId',
+                'debutSeason',
+                'debutTeamId',
+                'debutTeamName',
+              ].includes(key)
+            ) {
+              return (a, b) => {
+                return a !== null && a.length > 0 ? a : b;
               };
             }
           },

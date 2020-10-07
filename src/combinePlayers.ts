@@ -2,6 +2,7 @@ import Bottleneck from 'bottleneck';
 import chunk from 'lodash.chunk';
 import { fetchData } from './utils';
 import fs from 'fs';
+import merge from 'deepmerge';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1000 });
 
@@ -24,9 +25,48 @@ async function combinePlayers() {
     playerIds.add(player.id);
 
     if (!Object.hasOwnProperty.call(players, player.id)) {
-      players[player.id] = {
-        ...player,
-      };
+      players[player.id] = player;
+    } else {
+      let mostRecent;
+      let leastRecent;
+
+      if (
+        players[player.id].lastGameSeason > player.lastGameSeason &&
+        players[player.id].lastGameDay > player.lastGameDay
+      ) {
+        mostRecent = players[player.id];
+        leastRecent = player;
+      } else {
+        leastRecent = players[player.id];
+        mostRecent = player;
+      }
+
+      players[player.id] = merge(leastRecent, mostRecent, {
+        customMerge: (key) => {
+          if (key === 'aliases') {
+            return (a, b) => {
+              const aliases = new Set();
+              a.forEach((alias) => aliases.add(alias));
+              b.forEach((alias) => aliases.add(alias));
+
+              return Array.from(aliases);
+            };
+          }
+          if (
+            [
+              'debutDay',
+              'debutGameId',
+              'debutSeason',
+              'debutTeamId',
+              'debutTeamName',
+            ].includes(key)
+          ) {
+            return (a, b) => {
+              return a !== null && a.length > 0 ? a : b;
+            };
+          }
+        },
+      });
     }
   }
 
