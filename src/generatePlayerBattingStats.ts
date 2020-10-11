@@ -434,7 +434,26 @@ pipeline.on('data', (gameDataUpdate) => {
       prevBatterSummary &&
       gameState.lastUpdate.match(/(home run|grand slam)/i) !== null
     ) {
+      // Increment batter's runs scored
       prevBatterSummary.runsScored += 1;
+
+      // Incrememnt base runners' runs scored
+      const prevBasesRunners = prevGameState.baseRunners.slice();
+      for (let i = 0; i <= prevBasesRunners.length; i++) {
+        const scoringRunnerId = prevBasesRunners.shift();
+
+        if (batterSummaries.hasOwnProperty(scoringRunnerId)) {
+          if (gameState.isPostseason) {
+            batterSummaries[scoringRunnerId].postseasons[
+              gameState.season
+            ].runsScored += 1;
+          } else {
+            batterSummaries[scoringRunnerId].seasons[
+              gameState.season
+            ].runsScored += 1;
+          }
+        }
+      }
     }
 
     // Increment runs scored for following scenarios
@@ -447,10 +466,11 @@ pipeline.on('data', (gameDataUpdate) => {
       const runsScored = Number(numberOfRunsScoredMatch[1]);
       const prevBasesRunners = prevGameState.baseRunners.slice();
 
+      // Increment runs scored for the respective number of runners closest to home
+      // - The base runners array is in reverse order which is why shift is used
       for (let i = 0; i <= runsScored; i++) {
         const scoringRunnerId = prevBasesRunners.shift();
 
-        // Increment runs scored for runner on third
         // - @TODO: Add initial batter object if it doesn't exist
         if (batterSummaries.hasOwnProperty(scoringRunnerId)) {
           if (gameState.isPostseason) {
@@ -464,6 +484,7 @@ pipeline.on('data', (gameDataUpdate) => {
           }
         }
       }
+
       // Increment runs scored for following scenarios, assuming runner on third is only runner to score
       // [x] - José Haley reaches on fielder's choice. Cell Barajas out at second base. Ronan Combs scores
       // [x] - Marco Stink  scores on the sacrifice.
