@@ -818,6 +818,7 @@ async function fetchSubleaguesAndDivisions(): Promise<
   SubleaguesAndDivisionsBySeason
 > {
   let hasCachedResponse;
+  let mostRecentCachedSeason;
   let response;
 
   const simulationData: any = await limiter.schedule(
@@ -847,26 +848,32 @@ async function fetchSubleaguesAndDivisions(): Promise<
       hasCachedResponse = false;
     }
 
+    mostRecentCachedSeason = Object.keys(dataJson.seasons)
+      .sort((a, b) => Number(a) - Number(b))
+      .pop();
+
     hasCachedResponse = true;
     response = {
       seasons: {
         ...dataJson.seasons,
-        // divisions: dataJson.seasons[currentSeason].divisions,
-        // subleagues: dataJson.seasons[currentSeason].subleagues,
       },
     };
   } catch {
     hasCachedResponse = false;
   }
 
-  if (hasCachedResponse && response) {
+  if (
+    hasCachedResponse &&
+    response &&
+    mostRecentCachedSeason === currentSeason
+  ) {
     return response;
   }
 
   const subleagues: { [subleagueId: string]: Subleague } =
-    response.seasons?.[currentSeason]?.subleagues;
+    response.seasons?.[currentSeason]?.subleagues ?? {};
   const divisions: { [divisionId: string]: Division } =
-    response.seasons?.[currentSeason]?.divisions;
+    response.seasons?.[currentSeason]?.divisions ?? {};
 
   const ILB_ID = 'd8545021-e9fc-48a3-af74-48685950a183';
   const league: any = await limiter.schedule(
