@@ -562,6 +562,14 @@ pipeline.on('data', (gameDataUpdate) => {
       prevBatterSummary.triplesHit += 1;
     }
 
+    // Increment quadruples hit
+    if (
+      prevBatterSummary &&
+      gameState.lastUpdate.match(/(hits a Quadruple)/i) !== null
+    ) {
+      prevBatterSummary.quadruplesHit += 1;
+    }
+
     // Increment home runs hit
     if (
       prevBatterSummary &&
@@ -820,6 +828,7 @@ pipeline.on('end', async () => {
         seasonStats.hitsWithRunnersInScoringPosition;
       careerSeasonData.doublesHit += seasonStats.doublesHit;
       careerSeasonData.triplesHit += seasonStats.triplesHit;
+      careerSeasonData.quadruplesHit += seasonStats.quadruplesHit;
       careerSeasonData.homeRunsHit += seasonStats.homeRunsHit;
       careerSeasonData.runsBattedIn += seasonStats.runsBattedIn;
       careerSeasonData.stolenBases += seasonStats.stolenBases;
@@ -866,6 +875,7 @@ pipeline.on('end', async () => {
         postseasonStats.hitsWithRunnersInScoringPosition;
       careerPostseasonData.doublesHit += postseasonStats.doublesHit;
       careerPostseasonData.triplesHit += postseasonStats.triplesHit;
+      careerPostseasonData.quadruplesHit += postseasonStats.quadruplesHit;
       careerPostseasonData.homeRunsHit += postseasonStats.homeRunsHit;
       careerPostseasonData.runsBattedIn += postseasonStats.runsBattedIn;
       careerPostseasonData.stolenBases += postseasonStats.stolenBases;
@@ -984,12 +994,18 @@ function calculateOnBasePlusSlugging(stats) {
 
 function calculateSluggingPercentage(stats) {
   const singlesHit =
-    stats.hits - (stats.doublesHit + stats.triplesHit + stats.homeRunsHit);
+    stats.hits -
+    (stats.doublesHit +
+      stats.triplesHit +
+      stats.quadruplesHit +
+      stats.homeRunsHit);
 
+  // @TODO: Figure out how to handle quadruples
   return stats.atBats > 0
     ? (singlesHit +
         stats.doublesHit * 2 +
         stats.triplesHit * 3 +
+        stats.quadruplesHit * 4 +
         stats.homeRunsHit * 4) /
         stats.atBats
     : 0;
@@ -997,12 +1013,17 @@ function calculateSluggingPercentage(stats) {
 
 function calculateTotalBases(stats) {
   const singlesHit =
-    stats.hits - (stats.doublesHit + stats.triplesHit + stats.homeRunsHit);
+    stats.hits -
+    (stats.doublesHit +
+      stats.triplesHit +
+      stats.quadruplesHit +
+      stats.homeRunsHit);
 
   return (
     singlesHit +
     stats.doublesHit * 2 +
     stats.triplesHit * 3 +
+    stats.quadruplesHit * 4 +
     stats.homeRunsHit * 4
   );
 }
@@ -1095,6 +1116,7 @@ function initialBatterStatsObject(initialValues = {}) {
     teamName: null,
     totalBases: 0,
     triplesHit: 0,
+    quadruplesHit: 0,
   };
 
   // Perform a shallow copy of initialValues over defaults

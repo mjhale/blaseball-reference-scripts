@@ -604,12 +604,20 @@ pipeline.on('data', (gameDataUpdate) => {
     // @TODO: Account for mid-game pitcher changes
     if (prevGameState && prevGameState.awayScore !== gameState.awayScore) {
       const scoreDiff = gameState.awayScore - prevGameState.awayScore;
-      homePitcherSummary.earnedRuns += scoreDiff;
+
+      // Account for shame pit activations which result in negative score diffs
+      if (scoreDiff > 0) {
+        homePitcherSummary.earnedRuns += scoreDiff;
+      }
     }
 
     if (prevGameState && prevGameState.homeScore !== gameState.homeScore) {
       const scoreDiff = gameState.homeScore - prevGameState.homeScore;
-      awayPitcherSummary.earnedRuns += scoreDiff;
+
+      // Account for shame pit activations which result in negative score diffs
+      if (scoreDiff > 0) {
+        awayPitcherSummary.earnedRuns += scoreDiff;
+      }
     }
 
     // Increment home runs allowed

@@ -219,6 +219,12 @@ function getStatCategories() {
     },
     { abbreviation: '2B', id: 'doublesHit', name: 'Doubles Hit', sort: 'desc' },
     { abbreviation: '3B', id: 'triplesHit', name: 'Triples Hit', sort: 'desc' },
+    {
+      abbreviation: '4B',
+      id: 'quadruplesHit',
+      name: 'Quadruples Hit',
+      sort: 'desc',
+    },
     { abbreviation: 'TB', id: 'totalBases', name: 'Total Bases', sort: 'desc' },
     {
       abbreviation: 'CS',
