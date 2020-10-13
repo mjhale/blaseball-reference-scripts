@@ -849,7 +849,8 @@ async function fetchSubleaguesAndDivisions(): Promise<
     }
 
     mostRecentCachedSeason = Object.keys(dataJson.seasons)
-      .sort((a, b) => Number(a) - Number(b))
+      .map((season) => Number(season))
+      .sort((a, b) => a - b)
       .pop();
 
     hasCachedResponse = true;
