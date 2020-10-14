@@ -496,7 +496,7 @@ pipeline.on('data', (gameDataUpdate) => {
       // A name so powerful that we must hide it from the regex to come
       .replace(/\bScores Baserunner\b/, '');
 
-    const lastUpdateMatchesAny = (...pieces: string[]) ==> {
+    const lastUpdateMatchesAny = (...pieces: string[]) => {
       const regex = new RegExp(`\b(?:${pieces.join('|')})\b`, 'i');
       return regex.test(sanitizedLastUpdate);
     };
@@ -517,8 +517,8 @@ pipeline.on('data', (gameDataUpdate) => {
         'strikes out',
         'struck out',
         'caught stealing',
-        'fielder\'s choice',
-        'sacrifice',
+        "fielder's choice",
+        'sacrifice'
       )
     ) {
       prevPitcherSummary.outsRecorded += 1;
@@ -539,8 +539,8 @@ pipeline.on('data', (gameDataUpdate) => {
         'reaches',
         'steals',
         'caught stealing',
-        'fielder\'s choice',
-        'sacrifice',
+        "fielder's choice",
+        'sacrifice'
       )
     ) {
       prevPitcherSummary.pitchCount += 1;
@@ -571,7 +571,7 @@ pipeline.on('data', (gameDataUpdate) => {
     // Update player attributes following incineration
     // @TODO: Handle pitcher substitutions..?
     const incineratedPlayerMatch = sanitizedLastUpdate.match(
-      /\bRogue Umpire incinerated [\w\s]+ pitcher ([\w\s]+)!\b/i,
+      /\bRogue Umpire incinerated [\w\s]+ pitcher ([\w\s]+)!\b/i
     );
     if (prevGameState && incineratedPlayerMatch !== null) {
       const incineratedPlayerName = incineratedPlayerMatch[1];
@@ -606,19 +606,13 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     // Increment hit by pitches
-    if (
-      prevPitcherSummary &&
-      lastUpdateMatchesAny('with a pitch')
-    ) {
+    if (prevPitcherSummary && lastUpdateMatchesAny('with a pitch')) {
       prevPitcherSummary.hitByPitches += 1;
     }
 
     // Increment strikeouts
     // @TODO: Check to see if currPitcher changes if strikeout leads to inning change
-    if (
-      prevGameState &&
-      lastUpdateMatchesAny('strikes out|struck out')
-    ) {
+    if (prevGameState && lastUpdateMatchesAny('strikes out|struck out')) {
       prevPitcherSummary.strikeouts += 1;
     }
 
@@ -648,10 +642,7 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     // Increment home runs allowed
-    if (
-      prevGameState &&
-      lastUpdateMatchesAny('home run', 'grand slam')
-    ) {
+    if (prevGameState && lastUpdateMatchesAny('home run', 'grand slam')) {
       prevPitcherSummary.homeRuns += 1;
     }
 
