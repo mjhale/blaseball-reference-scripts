@@ -398,7 +398,8 @@ pipeline.on('data', (gameDataUpdate) => {
       .replace(/\bScores Baserunner\b/, '');
 
     const lastUpdateMatchesAny = (...pieces: string[]) => {
-      const regex = new RegExp(`\b(?:${pieces.join('|')})\b`, 'i');
+      const regex = new RegExp(`\\b(?:${pieces.join('|')})\\b`, 'i');
+
       return regex.test(sanitizedLastUpdate);
     };
 
