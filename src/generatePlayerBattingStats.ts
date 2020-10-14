@@ -393,12 +393,31 @@ pipeline.on('data', (gameDataUpdate) => {
       currBatterSummary.appearances += 1;
     }
 
+    const sanitizedLastUpdate = gameState.lastUpdate
+      // A name so powerful that we must hide it from the regex to come
+      .replace(/\bScores Baserunner\b/, '');
+
+    const lastUpdateMatchesAny = (...pieces: string[]) => {
+      const regex = new RegExp(`\\b(?:${pieces.join('|')})\\b`, 'i');
+
+      return regex.test(sanitizedLastUpdate);
+    };
+
     // Increment plate appearances, defined as PA = H, BB, K, HBP, SH, SF, DI, E, DFO
     if (
       prevBatterSummary &&
-      gameState.lastUpdate.match(
-        /(hits a|hit into|fielder's choice|strikes out|struck out|ground out|flyout|sacrifice|draws a walk|with a pitch)/i
-      ) !== null
+      lastUpdateMatchesAny(
+        'hits a',
+        'hit into',
+        "fielder's choice",
+        'strikes out',
+        'struck out',
+        'ground out',
+        'flyout',
+        'sacrifice',
+        'draws a walk',
+        'with a pitch'
+      )
     ) {
       prevBatterSummary.plateAppearances += 1;
     }
@@ -406,9 +425,15 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment at bats
     if (
       prevBatterSummary &&
-      gameState.lastUpdate.match(
-        /(hits a|hit into|fielder's choice|strikes out|struck out|ground out|flyout)/i
-      ) !== null
+      lastUpdateMatchesAny(
+        'hits a',
+        'hit into',
+        "fielder's choice",
+        'strikes out',
+        'struck out',
+        'ground out',
+        'flyout'
+      )
     ) {
       prevBatterSummary.atBats += 1;
 
@@ -423,17 +448,14 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment runs batted in
     if (
       prevBatterSummary &&
-      gameState.lastUpdate.match(/(home run|score|grand slam)/i) !== null
+      lastUpdateMatchesAny('home run', 'score', 'grand slam')
     ) {
       prevBatterSummary.runsBattedIn +=
         gameState.halfInningScore - prevGameState.halfInningScore;
     }
 
     // Increment runs scored for home runs
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/(home run|grand slam)/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('home run', 'grand slam')) {
       // Increment batter's runs scored
       prevBatterSummary.runsScored += 1;
 
@@ -459,8 +481,8 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment runs scored for following scenarios
     // [x] - Lang Richardson hits a Single! 1 scores.
     // [x] - Juice Collins hits a Single! 2s score.
-    const numberOfRunsScoredMatch = gameState.lastUpdate.match(
-      /(\d+)s? scores?\b/i
+    const numberOfRunsScoredMatch = sanitizedLastUpdate.match(
+      /\b(\d+)s? scores?\b/i
     );
     if (prevGameState && numberOfRunsScoredMatch !== null) {
       const runsScored = Number(numberOfRunsScoredMatch[1]);
@@ -490,10 +512,7 @@ pipeline.on('data', (gameDataUpdate) => {
       // [x] - Marco Stink  scores on the sacrifice.
       // [x] - Morrow Doyle hit a sacrifice fly. Esme Ramsey tags up and scores!
       // [x] - Paula Mason draws a walk. Baby Urlacher scores!
-    } else if (
-      prevGameState &&
-      gameState.lastUpdate.match(/ scores?\b/i) !== null
-    ) {
+    } else if (prevGameState && lastUpdateMatchesAny('scores?')) {
       const scoringRunnerId = prevGameState.baseRunners[0];
 
       // Increment runs scored for runner on third
@@ -513,10 +532,7 @@ pipeline.on('data', (gameDataUpdate) => {
 
     // [x] - Hurley Pacheco hits a 3-run home run!
     // [x] - Hendricks Rangel hits a grand slam!
-    if (
-      prevGameState &&
-      gameState.lastUpdate.match(/home run|grand slam/i) !== null
-    ) {
+    if (prevGameState && lastUpdateMatchesAny('home run', 'grand slam')) {
       for (const scoringRunnerId of prevGameState.baseRunners) {
         // Increment runs scored for runner on third
         // - @TODO: Add initial batter object if it doesn't exist
@@ -535,7 +551,7 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     // Increment hits
-    if (prevBatterSummary && gameState.lastUpdate.match(/(hits a)/i) !== null) {
+    if (prevBatterSummary && lastUpdateMatchesAny('hits a')) {
       prevBatterSummary.hits += 1;
 
       if (
@@ -547,88 +563,61 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     // Increment doubles hit
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/(hits a double)/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('hits a double')) {
       prevBatterSummary.doublesHit += 1;
     }
 
     // Increment triples hit
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/(hits a triple)/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('hits a triple')) {
       prevBatterSummary.triplesHit += 1;
     }
 
     // Increment quadruples hit
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/(hits a Quadruple)/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('hits a Quadruple')) {
       prevBatterSummary.quadruplesHit += 1;
     }
 
     // Increment home runs hit
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/(home run|grand slam)/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('home run', 'grand slam')) {
       prevBatterSummary.homeRunsHit += 1;
     }
 
     // Increment bases on balls
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/(walk|with a pitch)/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('walk', 'with a pitch')) {
       prevBatterSummary.basesOnBalls += 1;
     }
 
     // Increment hit by pitches
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/with a pitch/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('with a pitch')) {
       prevBatterSummary.hitByPitches += 1;
     }
 
     // Increment strikeouts
     if (
       prevBatterSummary &&
-      gameState.lastUpdate.match(/(strikes out|struck out)/i) !== null
+      lastUpdateMatchesAny('strikes out', 'struck out')
     ) {
       prevBatterSummary.strikeouts += 1;
     }
 
     // Increment ground into double plays
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/hit into a double play/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('hit into a double play')) {
       prevBatterSummary.groundIntoDoublePlays += 1;
     }
 
     // Increment sacrifice bunts/hits
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/scores on the sacrifice/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('scores on the sacrifice')) {
       prevBatterSummary.sacrificeBunts += 1;
     }
 
     // Increment sacrifice flies
-    if (
-      prevBatterSummary &&
-      gameState.lastUpdate.match(/sacrifice fly/i) !== null
-    ) {
+    if (prevBatterSummary && lastUpdateMatchesAny('sacrifice fly')) {
       prevBatterSummary.sacrificeFlies += 1;
     }
 
     // Increment steals
     // @TODO: Check the semantics of what qualifies as a steal
-    const stolenBaseMatch = gameState.lastUpdate.match(/steals ([\w].*?)!/i);
+    const stolenBaseMatch = sanitizedLastUpdate.match(/\bsteals ([\w].*?)!/i);
     if (prevGameState && stolenBaseMatch !== null) {
       const prevBasesOccupied = prevGameState.basesOccupied.slice();
       const basesOccupied = gameState.basesOccupied.slice();
@@ -669,8 +658,8 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment caught stealing
     // @TODO: Check the semantics of what qualifies as caught stealing
     // @TODO: Check what happens when caught stealing out ends the inning
-    const caughtStealingMatch = gameState.lastUpdate.match(
-      /([\w].*?) gets caught stealing/i
+    const caughtStealingMatch = sanitizedLastUpdate.match(
+      /\b([\w].*?) gets caught stealing\b/i
     );
     if (prevGameState && caughtStealingMatch !== null) {
       const caughtStealingName = caughtStealingMatch[1];
@@ -695,8 +684,8 @@ pipeline.on('data', (gameDataUpdate) => {
 
     // Update player attributes following incineration
     // @TODO: Handle at-bat substitutions..?
-    const incineratedPlayerMatch = gameState.lastUpdate.match(
-      /Rogue Umpire incinerated [\w\s]+ hitter ([\w\s]+)!/i
+    const incineratedPlayerMatch = sanitizedLastUpdate.match(
+      /\bRogue Umpire incinerated [\w\s]+ hitter ([\w\s]+)!/i
     );
     if (prevGameState && incineratedPlayerMatch !== null) {
       const incineratedPlayerName: string = incineratedPlayerMatch[1];
