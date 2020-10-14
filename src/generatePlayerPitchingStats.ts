@@ -492,9 +492,18 @@ pipeline.on('data', (gameDataUpdate) => {
       homePitcherSummary.teamName = gameState.homeTeamName;
     }
 
+    const sanitizedLastUpdate = gameState.lastUpdate
+      // A name so powerful that we must hide it from the regex to come
+      .replace(/\bScores Baserunner\b/, '');
+
+    const lastUpdateMatchesAny = (...pieces: string[]) ==> {
+      const regex = new RegExp(`\b(?:${pieces.join('|')})\b`, 'i');
+      return regex.test(sanitizedLastUpdate);
+    };
+
     // Increment appearances for pitchers
     // @TODO: Account for mid-game pitcher changes
-    if (gameState.lastUpdate.match(/Game Over/i) !== null) {
+    if (lastUpdateMatchesAny('Game Over')) {
       awayPitcherSummary.appearances += 1;
       homePitcherSummary.appearances += 1;
     }
@@ -502,9 +511,15 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment outs recorded
     if (
       prevGameState &&
-      gameState.lastUpdate.match(
-        /(hit a|hit into|strikes out|struck out|caught stealing|fielder's choice|sacrifice)/i
-      ) !== null
+      lastUpdateMatchesAny(
+        'hit a',
+        'hit into',
+        'strikes out',
+        'struck out',
+        'caught stealing',
+        'fielder\'s choice',
+        'sacrifice',
+      )
     ) {
       prevPitcherSummary.outsRecorded += 1;
     }
@@ -512,16 +527,28 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment pitch count
     if (
       prevGameState &&
-      gameState.lastUpdate.match(
-        /(hit a|hit into|hits|foul ball|draws a|game over|strikes out|struck out|reaches|steals|caught stealing|fielder's choice|sacrifice)/i
-      ) !== null
+      lastUpdateMatchesAny(
+        'hit a',
+        'hit into',
+        'hits',
+        'foul ball',
+        'draws a',
+        'game over',
+        'strikes out',
+        'struck out',
+        'reaches',
+        'steals',
+        'caught stealing',
+        'fielder\'s choice',
+        'sacrifice',
+      )
     ) {
       prevPitcherSummary.pitchCount += 1;
     }
 
     // Increment wins and losses
     // @TODO: Account for mid-game pitcher changes
-    if (gameState.lastUpdate.match(/Game Over/i) !== null) {
+    if (lastUpdateMatchesAny('Game Over')) {
       if (gameState.homeScore > gameState.awayScore) {
         homePitcherSummary.wins += 1;
         awayPitcherSummary.losses += 1;
@@ -532,19 +559,19 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     // Increment flyouts
-    if (prevGameState && gameState.lastUpdate.match(/flyout/i) !== null) {
+    if (prevGameState && lastUpdateMatchesAny('flyout')) {
       prevPitcherSummary.flyouts += 1;
     }
 
     // Increment groundouts
-    if (prevGameState && gameState.lastUpdate.match(/ground out/i) !== null) {
+    if (prevGameState && lastUpdateMatchesAny('ground out')) {
       prevPitcherSummary.groundouts += 1;
     }
 
     // Update player attributes following incineration
     // @TODO: Handle pitcher substitutions..?
-    const incineratedPlayerMatch = gameState.lastUpdate.match(
-      /Rogue Umpire incinerated [\w\s]+ pitcher ([\w\s]+)!/i
+    const incineratedPlayerMatch = sanitizedLastUpdate.match(
+      /\bRogue Umpire incinerated [\w\s]+ pitcher ([\w\s]+)!\b/i,
     );
     if (prevGameState && incineratedPlayerMatch !== null) {
       const incineratedPlayerName = incineratedPlayerMatch[1];
@@ -566,14 +593,14 @@ pipeline.on('data', (gameDataUpdate) => {
     }
 
     // Increment hits allowed (encompasses home runs, doubles, etc)
-    if (prevPitcherSummary && gameState.lastUpdate.match(/hits a/i) !== null) {
+    if (prevPitcherSummary && lastUpdateMatchesAny('hits an?')) {
       prevPitcherSummary.hitsAllowed += 1;
     }
 
     // Increment bases on balls
     if (
       prevPitcherSummary &&
-      gameState.lastUpdate.match(/draws a walk|with a pitch/i) !== null
+      lastUpdateMatchesAny('draws a walk', 'with a pitch')
     ) {
       prevPitcherSummary.basesOnBalls += 1;
     }
@@ -581,7 +608,7 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment hit by pitches
     if (
       prevPitcherSummary &&
-      gameState.lastUpdate.match(/with a pitch/i) !== null
+      lastUpdateMatchesAny('with a pitch')
     ) {
       prevPitcherSummary.hitByPitches += 1;
     }
@@ -590,13 +617,13 @@ pipeline.on('data', (gameDataUpdate) => {
     // @TODO: Check to see if currPitcher changes if strikeout leads to inning change
     if (
       prevGameState &&
-      gameState.lastUpdate.match(/(strikes out|struck out)/i) !== null
+      lastUpdateMatchesAny('strikes out|struck out')
     ) {
       prevPitcherSummary.strikeouts += 1;
     }
 
     // Increment batters faced
-    if (gameState.lastUpdate.match(/batting for/i) !== null) {
+    if (lastUpdateMatchesAny('batting for')) {
       currPitcherSummary.battersFaced += 1;
     }
 
@@ -623,7 +650,7 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment home runs allowed
     if (
       prevGameState &&
-      gameState.lastUpdate.match(/home run|grand slam/i) !== null
+      lastUpdateMatchesAny('home run', 'grand slam')
     ) {
       prevPitcherSummary.homeRuns += 1;
     }
@@ -634,7 +661,7 @@ pipeline.on('data', (gameDataUpdate) => {
     if (
       prevGameState &&
       prevGameState.gameComplete === false &&
-      gameState.lastUpdate.match(/Game over/i) !== null
+      lastUpdateMatchesAny('Game over')
     ) {
       if (gameState.homeScore <= 3) {
         awayPitcherSummary.qualityStarts += 1;
@@ -650,7 +677,7 @@ pipeline.on('data', (gameDataUpdate) => {
     if (
       prevGameState &&
       prevGameState.gameComplete === false &&
-      gameState.lastUpdate.match(/Game over/i) !== null
+      lastUpdateMatchesAny('Game over')
     ) {
       if (gameState.homeScore === 0) {
         awayPitcherSummary.shutouts += 1;
