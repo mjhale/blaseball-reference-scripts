@@ -275,7 +275,7 @@ async function generateStandings() {
 
         if (losingTeamRecords.streak.streakType === 'losses') {
           losingTeamRecords.streak.streakNumber += 1;
-          losingTeamRecords.streak.streakCode = `L${winningTeamRecords.streak.streakNumber}`;
+          losingTeamRecords.streak.streakCode = `L${losingTeamRecords.streak.streakNumber}`;
         } else {
           losingTeamRecords.streak.streakType = 'losses';
           losingTeamRecords.streak.streakNumber = 1;
