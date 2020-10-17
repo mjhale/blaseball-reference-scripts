@@ -448,13 +448,16 @@ pipeline.on('data', (gameDataUpdate) => {
     // Increment runs batted in
     if (
       prevBatterSummary &&
-      lastUpdateMatchesAny('home run', 'score', 'grand slam')
+      lastUpdateMatchesAny('home run', 'scores?', 'grand slam')
     ) {
       prevBatterSummary.runsBattedIn +=
         gameState.halfInningScore - prevGameState.halfInningScore;
     }
 
-    // Increment runs scored for home runs
+    // Increment runs scored on home runs
+    // [x] - Jacob Haynes hits a solo home run!
+    // [x] - Hurley Pacheco hits a 3-run home run!
+    // [x] - Hendricks Rangel hits a grand slam!
     if (prevBatterSummary && lastUpdateMatchesAny('home run', 'grand slam')) {
       // Increment batter's runs scored
       prevBatterSummary.runsScored += 1;
@@ -526,26 +529,6 @@ pipeline.on('data', (gameDataUpdate) => {
           batterSummaries[scoringRunnerId].seasons[
             gameState.season
           ].runsScored += 1;
-        }
-      }
-    }
-
-    // [x] - Hurley Pacheco hits a 3-run home run!
-    // [x] - Hendricks Rangel hits a grand slam!
-    if (prevGameState && lastUpdateMatchesAny('home run', 'grand slam')) {
-      for (const scoringRunnerId of prevGameState.baseRunners) {
-        // Increment runs scored for runner on third
-        // - @TODO: Add initial batter object if it doesn't exist
-        if (batterSummaries.hasOwnProperty(scoringRunnerId)) {
-          if (gameState.isPostseason) {
-            batterSummaries[scoringRunnerId].postseasons[
-              gameState.season
-            ].runsScored += 1;
-          } else {
-            batterSummaries[scoringRunnerId].seasons[
-              gameState.season
-            ].runsScored += 1;
-          }
         }
       }
     }
