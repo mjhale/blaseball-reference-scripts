@@ -948,7 +948,8 @@ function getWeather() {
       name: 'Void',
     },
     {
-      name: 'Sunny',
+      // Season 11 Change: Sunny -> Sun 2
+      name: 'Sun 2',
     },
     {
       name: 'Overcast',
@@ -985,6 +986,9 @@ function getWeather() {
     },
     {
       name: 'Reverb',
+    },
+    {
+      name: 'Black Hole',
     },
   ];
 }
