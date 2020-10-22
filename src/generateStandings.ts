@@ -719,6 +719,19 @@ function calculateSplitWinningPct(record: {
   return record.wins / (record.wins + record.losses);
 }
 
+function countTeamRuns(team: 'home' | 'away', game: any): number {
+  let runCount = game[`${team}Score`];
+  for (const outcome of game.outcomes) {
+    if (outcome.includes('Sun 2') && outcome.includes(game[`${team}TeamNickname`])) {
+      runCount += 10;
+    }
+    else if (outcome.includes('Black Hole') && !(outcome.includes(game[`${team}TeamNickname`]))) {
+      runCount += 10;
+    }
+  }
+  return runCount;
+}
+
 function countTeamWins(team: 'home' | 'away', winner: 'home' | 'away', game: any): number {
   let winCount = 0;
   if (team === winner) {
@@ -733,19 +746,6 @@ function countTeamWins(team: 'home' | 'away', winner: 'home' | 'away', game: any
     }
   }
   return winCount;
-}
-
-function countTeamRuns(team: 'home' | 'away', game: any): number {
-  let runCount = game[`${team}Score`];
-  for (const outcome of game.outcomes) {
-    if (outcome.includes('Sun 2') && outcome.includes(game[`${team}TeamNickname`])) {
-      runCount += 10;
-    }
-    else if (outcome.includes('Black Hole') && !(outcome.includes(game[`${team}TeamNickname`]))) {
-      runCount += 10;
-    }
-  }
-  return runCount;
 }
 
 function createSplitRecordObject(initialValues: any) {
