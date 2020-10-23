@@ -315,8 +315,10 @@ async function generateStandings() {
         losingTeamRecords.runDifferential -=
           countTeamRuns(winner, game) - countTeamRuns(loser, game);
 
-        winningTeamRecords.runDifferential = Math.round(winningTeamRecords.runDifferential*10)/10
-        losingTeamRecords.runDifferential = Math.round(losingTeamRecords.runDifferential*10)/10
+        winningTeamRecords.runDifferential =
+          Math.round(winningTeamRecords.runDifferential * 10) / 10;
+        losingTeamRecords.runDifferential =
+          Math.round(losingTeamRecords.runDifferential * 10) / 10;
 
         // For intra-league games, increment/decrement league record
         if (winnerSubleague === loserSubleague) {
