@@ -721,30 +721,49 @@ function calculateSplitWinningPct(record: {
 
 function countTeamRuns(team: 'home' | 'away', game: any): number {
   let runCount = game[`${team}Score`];
+
   for (const outcome of game.outcomes) {
-    if (outcome.includes('Sun 2') && outcome.includes(game[`${team}TeamNickname`])) {
+    if (
+      outcome.includes('Sun 2') &&
+      outcome.includes(game[`${team}TeamNickname`])
+    ) {
       runCount += 10;
-    }
-    else if (outcome.includes('Black Hole') && !(outcome.includes(game[`${team}TeamNickname`]))) {
+    } else if (
+      outcome.includes('Black Hole') &&
+      !outcome.includes(game[`${team}TeamNickname`])
+    ) {
       runCount += 10;
     }
   }
+
   return runCount;
 }
 
-function countTeamWins(team: 'home' | 'away', winner: 'home' | 'away', game: any): number {
+function countTeamWins(
+  team: 'home' | 'away',
+  winner: 'home' | 'away',
+  game: any
+): number {
   let winCount = 0;
+
   if (team === winner) {
     winCount += 1;
   }
+
   for (const outcome of game.outcomes) {
-    if (outcome.includes('Sun 2') && outcome.includes(game[`${team}TeamNickname`])) {
+    if (
+      outcome.includes('Sun 2') &&
+      outcome.includes(game[`${team}TeamNickname`])
+    ) {
       winCount += 1;
-    }
-    else if (outcome.includes('Black Hole') && outcome.includes(game[`${team}TeamNickname`])) {
+    } else if (
+      outcome.includes('Black Hole') &&
+      outcome.includes(game[`${team}TeamNickname`])
+    ) {
       winCount -= 1;
     }
   }
+
   return winCount;
 }
 
