@@ -293,7 +293,8 @@ async function generateStandings() {
         winningTeamRecords.gamesPlayed += 1;
         losingTeamRecords.gamesPlayed += 1;
 
-        winningTeamRecords.wins += 1;
+        winningTeamRecords.wins += countTeamWins(winner, winner, game);
+        losingTeamRecords.wins += countTeamWins(loser, winner, game);
         losingTeamRecords.losses += 1;
 
         winningTeamRecords.winningPercentage =
@@ -303,16 +304,16 @@ async function generateStandings() {
           losingTeamRecords.wins /
           (losingTeamRecords.wins + losingTeamRecords.losses);
 
-        winningTeamRecords.runsAllowed += game[`${loser}Score`];
-        losingTeamRecords.runsAllowed += game[`${winner}Score`];
+        winningTeamRecords.runsAllowed += countTeamRuns(loser, game);
+        losingTeamRecords.runsAllowed += countTeamRuns(winner, game);
 
-        winningTeamRecords.runsScored += game[`${winner}Score`];
-        losingTeamRecords.runsScored += game[`${loser}Score`];
+        winningTeamRecords.runsScored += countTeamRuns(winner, game);
+        losingTeamRecords.runsScored += countTeamRuns(loser, game);
 
         winningTeamRecords.runDifferential +=
-          game[`${winner}Score`] - game[`${loser}Score`];
+          winningTeamRecords.runsScored - losingTeamRecords.runsScored;
         losingTeamRecords.runDifferential -=
-          game[`${winner}Score`] - game[`${loser}Score`];
+          winningTeamRecords.runsScored - losingTeamRecords.runsScored;
 
         // For intra-league games, increment/decrement league record
         if (winnerSubleague === loserSubleague) {
@@ -716,6 +717,54 @@ function calculateSplitWinningPct(record: {
   losses: number;
 }): number {
   return record.wins / (record.wins + record.losses);
+}
+
+function countTeamRuns(team: 'home' | 'away', game: any): number {
+  let runCount = game[`${team}Score`];
+
+  for (const outcome of game.outcomes) {
+    if (
+      outcome.includes('Sun 2') &&
+      outcome.includes(game[`${team}TeamNickname`])
+    ) {
+      runCount += 10;
+    } else if (
+      outcome.includes('Black Hole') &&
+      !outcome.includes(game[`${team}TeamNickname`])
+    ) {
+      runCount += 10;
+    }
+  }
+
+  return runCount;
+}
+
+function countTeamWins(
+  team: 'home' | 'away',
+  winner: 'home' | 'away',
+  game: any
+): number {
+  let winCount = 0;
+
+  if (team === winner) {
+    winCount += 1;
+  }
+
+  for (const outcome of game.outcomes) {
+    if (
+      outcome.includes('Sun 2') &&
+      outcome.includes(game[`${team}TeamNickname`])
+    ) {
+      winCount += 1;
+    } else if (
+      outcome.includes('Black Hole') &&
+      outcome.includes(game[`${team}TeamNickname`])
+    ) {
+      winCount -= 1;
+    }
+  }
+
+  return winCount;
 }
 
 function createSplitRecordObject(initialValues: any) {
