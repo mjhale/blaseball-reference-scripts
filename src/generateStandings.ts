@@ -1044,6 +1044,30 @@ function getWeather() {
     {
       name: 'Black Hole',
     },
+    {
+      name: 'Coffee',
+    },
+    {
+      name: 'Coffee 2',
+    },
+    {
+      name: 'Coffee 3s',
+    },
+    {
+      name: 'Flooding',
+    },
+    {
+      name: '???',
+    },
+    {
+      name: '???',
+    },
+    {
+      name: '???',
+    },
+    {
+      name: '???',
+    },
   ];
 }
 
