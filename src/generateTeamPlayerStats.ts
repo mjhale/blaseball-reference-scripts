@@ -46,11 +46,9 @@ interface TeamStats {
   // Iterate through list of teams
   for (const team of teams) {
     // Generate a deburred slug for potential fs issues
-    const teamSlug: string = deburr(team.fullName)
-      .toLowerCase()
-      .replace(/\s/g, '-');
+    const teamSlug: string = team.url_slug;
 
-    const { id: teamId, ...teamSpread } = team;
+    const { team_id: teamId, ...teamSpread } = team;
 
     // Initialize object that will store team stats
     const teamStats: TeamStats = {

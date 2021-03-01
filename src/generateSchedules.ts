@@ -87,7 +87,10 @@ async function generateSchedules() {
     for (const season of Object.keys(teamGames)) {
       for (const day in teamGames[season]) {
         teamGames[season][day] = teamGames[season][day].filter((game) => {
-          if (game.awayTeam === team.id || game.homeTeam === team.id) {
+          if (
+            game.awayTeam === team.team_id ||
+            game.homeTeam === team.team_id
+          ) {
             return true;
           } else {
             return false;
@@ -96,10 +99,12 @@ async function generateSchedules() {
       }
     }
 
-    await fs.promises.mkdir(`./data/teams/${team.slug}`, { recursive: true });
+    await fs.promises.mkdir(`./data/teams/${team.url_slug}`, {
+      recursive: true,
+    });
 
     fs.writeFile(
-      `./data/teams/${team.slug}/schedule.json`,
+      `./data/teams/${team.url_slug}/schedule.json`,
       `${JSON.stringify(teamGames, null, '\t')}\n`,
       function (err) {
         if (err) {

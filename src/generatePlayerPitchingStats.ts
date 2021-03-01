@@ -8,8 +8,8 @@
  */
 import fs from 'fs';
 import ndjson from 'ndjson';
-import deburr from 'lodash.deburr';
 import dotenv from 'dotenv';
+import { fetchData } from './utils';
 import hash from 'object-hash';
 import merge from 'deepmerge';
 
@@ -131,7 +131,7 @@ pipeline.on('data', (gameDataUpdate) => {
   }
 
   // Iterate through each game in current tick
-  currGameStates.forEach((gameState) => {
+  currGameStates.forEach(async (gameState) => {
     if (!gameState) {
       return;
     }
@@ -209,13 +209,17 @@ pipeline.on('data', (gameDataUpdate) => {
 
     // Create initial summary objects if pitcher hasn't been previously seen
     if (!Object.prototype.hasOwnProperty.call(pitcherSummaries, currPitcher)) {
+      const playerFromDatablase: {
+        url_slug: string;
+      } = await getPlayerFromDatablase(currPitcher);
+
       const name = gameState.topOfInning
         ? gameState.homePitcherName
         : gameState.awayPitcherName;
       pitcherSummaries[currPitcher] = createPitcherSummaryObject({
         id: currPitcher,
         name,
-        slug: deburr(name).toLowerCase().replace(/\s/g, '-'),
+        slug: playerFromDatablase.url_slug,
       });
     }
 
@@ -223,12 +227,14 @@ pipeline.on('data', (gameDataUpdate) => {
       currPitcher !== awayPitcher &&
       !Object.prototype.hasOwnProperty.call(pitcherSummaries, awayPitcher)
     ) {
+      const playerFromDatablase: {
+        url_slug: string;
+      } = await getPlayerFromDatablase(awayPitcher);
+
       pitcherSummaries[awayPitcher] = createPitcherSummaryObject({
         id: awayPitcher,
         name: gameState.awayPitcherName,
-        slug: deburr(gameState.awayPitcherName)
-          .toLowerCase()
-          .replace(/\s/g, '-'),
+        slug: playerFromDatablase.url_slug,
       });
     }
 
@@ -236,12 +242,14 @@ pipeline.on('data', (gameDataUpdate) => {
       currPitcher !== homePitcher &&
       !Object.prototype.hasOwnProperty.call(pitcherSummaries, homePitcher)
     ) {
+      const playerFromDatablase: {
+        url_slug: string;
+      } = await getPlayerFromDatablase(homePitcher);
+
       pitcherSummaries[homePitcher] = createPitcherSummaryObject({
         id: homePitcher,
         name: gameState.homePitcherName,
-        slug: deburr(gameState.homePitcherName)
-          .toLowerCase()
-          .replace(/\s/g, '-'),
+        slug: playerFromDatablase.url_slug,
       });
     }
 
@@ -1075,9 +1083,7 @@ function createPlayerObject({
     lastGameSeason: relativeGameState.season,
     name: null,
     position: 'rotation',
-    slug: initialValues.hasOwnProperty('name')
-      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, '-')
-      : null,
+    slug: null,
   };
 
   // Perform a shallow copy of initialValues over defaults
@@ -1119,4 +1125,12 @@ function initialPitcherStatsObject(initialValues = {}) {
 
   // Perform a shallow copy of initialValues over defaults
   return Object.assign({}, defaults, initialValues);
+}
+
+async function getPlayerFromDatablase(playerId) {
+  const player = await fetchData(
+    `https://api.blaseball-reference.com/v2/players/${playerId}`
+  );
+
+  return player;
 }

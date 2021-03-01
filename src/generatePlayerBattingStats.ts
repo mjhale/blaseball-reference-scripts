@@ -6,8 +6,8 @@
  */
 import fs from 'fs';
 import ndjson from 'ndjson';
-import deburr from 'lodash.deburr';
 import dotenv from 'dotenv';
+import { fetchData } from './utils';
 import hash from 'object-hash';
 import merge from 'deepmerge';
 
@@ -131,7 +131,7 @@ pipeline.on('data', (gameDataUpdate) => {
   }
 
   // Iterate through each game in current tick
-  currGameStates.forEach((gameState) => {
+  currGameStates.forEach(async (gameState) => {
     // Normalize ID field to account for old archives and new archives (_id and id)
     if (!gameState.hasOwnProperty('id') && gameState.hasOwnProperty('_id')) {
       gameState.id = gameState._id;
@@ -205,9 +205,14 @@ pipeline.on('data', (gameDataUpdate) => {
       currBatter &&
       !Object.prototype.hasOwnProperty.call(batterSummaries, currBatter)
     ) {
+      const playerFromDatablase: {
+        url_slug: string;
+      } = await getPlayerFromDatablase(currBatter);
+
       batterSummaries[currBatter] = createBatterSummaryObject({
         id: currBatter,
         name: currBatterName,
+        slug: playerFromDatablase.url_slug,
       });
     }
 
@@ -1000,16 +1005,14 @@ function calculateTotalBases(stats) {
   );
 }
 
-function createBatterSummaryObject(initialValues) {
+async function createBatterSummaryObject(initialValues) {
   const defaults = {
     careerPostseason: initialBatterStatsObject(),
     careerSeason: initialBatterStatsObject(),
     id: null,
     name: null,
     seasons: {},
-    slug: initialValues.hasOwnProperty('name')
-      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, '-')
-      : null,
+    slug: null,
     postseasons: {},
   };
 
@@ -1050,9 +1053,7 @@ function createPlayerObject({
     lastGameSeason: relativeGameState.season,
     name: null,
     position: 'lineup',
-    slug: initialValues.hasOwnProperty('name')
-      ? deburr(initialValues.name).toLowerCase().replace(/\s/g, '-')
-      : null,
+    slug: null,
   };
 
   // Perform a shallow copy of initialValues over defaults
@@ -1093,4 +1094,12 @@ function initialBatterStatsObject(initialValues = {}) {
 
   // Perform a shallow copy of initialValues over defaults
   return Object.assign({}, defaults, initialValues);
+}
+
+async function getPlayerFromDatablase(playerId) {
+  const player = await fetchData(
+    `https://api.blaseball-reference.com/v2/players/${playerId}`
+  );
+
+  return player;
 }

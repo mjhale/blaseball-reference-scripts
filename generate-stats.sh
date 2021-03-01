@@ -4,9 +4,10 @@ S3_LOGS_ARCHIVE=s3://blaseball-archive-iliana/
 S3_BLASEBALL_REF_ARCHIVE=s3://blaseball-reference/public/json-data/
 
 mkdir -p ./data ./blaseball-logs ./tmp
+# mkdir -p ./data
 
 echo "Pulling game update logs from S3..."
-/usr/local/bin/aws --quiet --no-sign-request s3 sync $S3_LOGS_ARCHIVE ./blaseball-logs/ --exclude "hourly/*" --exclude "compressed-hourly/*" --exclude "idols/*"
+aws --quiet --no-sign-request s3 sync $S3_LOGS_ARCHIVE ./blaseball-logs/ --exclude "hourly/*" --exclude "compressed-hourly/*" --exclude "idols/*" --exclude "v2/*"
 
 echo "Combining logs..."
 cat ./blaseball-logs/*.gz > ./tmp/combined-blaseball-log.json.gz
@@ -22,7 +23,7 @@ echo "Compiling TypeScript files..."
 npx tsc --project tsconfig.json
 
 echo "Fetching latest team information..."
-node dist/fetchTeams.js
+node dist/fetchTeamsFromDatablase.js
 
 echo "Generating standing tables..."
 node dist/generateStandings.js
@@ -30,16 +31,16 @@ node dist/generateStandings.js
 echo "Generating schedule files..."
 node dist/generateSchedules.js
 
-echo "Generating player stats..."
-node dist/generatePlayerPitchingStats.js
-node dist/generatePlayerBattingStats.js
-node dist/combinePlayers.js
+# echo "Generating player stats..."
+# node dist/generatePlayerPitchingStats.js
+# node dist/generatePlayerBattingStats.js
+# node dist/combinePlayers.js
 
-echo "Generating team player stats..."
-node dist/generateTeamPlayerStats.js
+# echo "Generating team player stats..."
+# node dist/generateTeamPlayerStats.js
 
-echo "Generating stat leaders..."
-node dist/generateStatLeaders.js
+# echo "Generating stat leaders..."
+# node dist/generateStatLeaders.js
 
 echo "Copying generated data to Blaseball Reference S3 bucket..."
 find ./data/ -type f -exec gzip "{}" \; -exec mv "{}.gz" "{}" \;
