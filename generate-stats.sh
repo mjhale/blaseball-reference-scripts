@@ -4,10 +4,9 @@ S3_LOGS_ARCHIVE=s3://blaseball-archive-iliana/
 S3_BLASEBALL_REF_ARCHIVE=s3://blaseball-reference/public/json-data/
 
 mkdir -p ./data ./blaseball-logs ./tmp
-# mkdir -p ./data
 
 echo "Pulling game update logs from S3..."
-aws --quiet --no-sign-request s3 sync $S3_LOGS_ARCHIVE ./blaseball-logs/ --exclude "hourly/*" --exclude "compressed-hourly/*" --exclude "idols/*" --exclude "v2/*"
+/usr/local/bin/aws --quiet --no-sign-request s3 sync $S3_LOGS_ARCHIVE ./blaseball-logs/ --exclude "hourly/*" --exclude "compressed-hourly/*" --exclude "idols/*" --exclude "v2/*"
 
 echo "Combining logs..."
 cat ./blaseball-logs/*.gz > ./tmp/combined-blaseball-log.json.gz
