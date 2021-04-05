@@ -142,7 +142,6 @@ async function generateStandings() {
 
   let games = {};
   let startingSeason;
-  let startingDay;
 
   try {
     games = await JSON.parse(
@@ -153,34 +152,12 @@ async function generateStandings() {
       .map((season) => Number(season))
       .sort((a, b) => a - b)
       .pop();
-
-    const sortedStartingSeasonDays = Object.keys(games[startingSeason])
-      .map((day) => Number(day))
-      .sort((a, b) => a - b);
-
-    for (const day of sortedStartingSeasonDays) {
-      let hasActiveGames = false;
-
-      for (const game of games[startingSeason][day]) {
-        if (game.gameComplete === false) {
-          hasActiveGames = true;
-        }
-      }
-
-      if (hasActiveGames) {
-        break;
-      } else {
-        startingDay = day;
-      }
-    }
   } catch (err) {
     console.log(err);
     startingSeason = 0;
-    startingDay = 0;
   }
 
   const newGames = await fetchGameResults({
-    startingDay: startingDay,
     startingSeason,
   });
 
@@ -1057,7 +1034,7 @@ function getWeather() {
       name: 'Flooding',
     },
     {
-      name: '???',
+      name: 'Salmon',
     },
     {
       name: '???',

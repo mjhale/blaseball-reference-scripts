@@ -11,7 +11,6 @@ async function generateSchedules() {
   } = {};
   let teams: Array<any> = [];
   let startingSeason;
-  let startingDay;
 
   try {
     games = await JSON.parse(
@@ -38,18 +37,14 @@ async function generateSchedules() {
 
       if (hasActiveGames) {
         break;
-      } else {
-        startingDay = day;
       }
     }
   } catch (err) {
     console.log(err);
     startingSeason = 0;
-    startingDay = 0;
   }
 
   const newGames = await fetchGameResults({
-    startingDay: 99,
     startingSeason,
   });
 
