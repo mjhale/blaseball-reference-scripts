@@ -21,7 +21,7 @@ echo "Pulling latest script updates..."
 git pull
 
 echo "Installing JavaScript dependencies..."
-npm install
+npm ci
 
 echo "Compiling TypeScript files..."
 npx tsc --project tsconfig.json
