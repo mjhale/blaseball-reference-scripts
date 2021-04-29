@@ -1,21 +1,16 @@
 import Bottleneck from 'bottleneck';
 import { fetchData } from './utils';
 import fs from 'fs';
-import merge from 'deepmerge';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
 
-function main() {
-  fetchDivineFavor();
-}
-
-type DivineFavor = {
+type DivineFavorBySeason = {
   [seasonNumber: string]: string[];
 };
 
 // Take Wiki shortnames and find respective team ID from teams.json
-async function fetchDivineFavor() {
-  let divineFavor: DivineFavor = {};
+async function fetchAndUpdateDivineFavor() {
+  let divineFavor: DivineFavorBySeason = {};
 
   try {
     divineFavor = await JSON.parse(
@@ -42,23 +37,19 @@ async function fetchDivineFavor() {
     ) {
       console.log(`Fetching divine favor for season ${currentSeason}`);
 
-      if (isRegularSeasonPhase(currentSeason, currentPhase) === true) {
-        const leagueData: any = await limiter.schedule(
-          fetchData,
-          `https://blaseball.com/database/league?id=${currentLeagueId}`
-        );
+      const leagueData: any = await limiter.schedule(
+        fetchData,
+        `https://blaseball.com/database/league?id=${currentLeagueId}`
+      );
 
-        const tiebreakerData: any = await limiter.schedule(
-          fetchData,
-          `https://blaseball.com/database/tiebreakers?id=${leagueData.tiebreakers}`
-        );
+      const tiebreakerData: any = await limiter.schedule(
+        fetchData,
+        `https://blaseball.com/database/tiebreakers?id=${leagueData.tiebreakers}`
+      );
 
-        const currentSeasonTiebreakers: string[] = tiebreakerData[0].order;
+      const currentSeasonTiebreakers: string[] = tiebreakerData[0].order;
 
-        divineFavor[currentSeason] = currentSeasonTiebreakers;
-
-        console.log(currentSeason);
-      }
+      divineFavor[currentSeason] = currentSeasonTiebreakers;
     }
   } catch (err) {
     console.log(err);
@@ -77,18 +68,4 @@ async function fetchDivineFavor() {
   );
 }
 
-// The divine rankings seem to set with the first game of each season, so checking
-// during the regular season may not be necessary.
-function isRegularSeasonPhase(season, phase) {
-  if (season < 12 && phase === 2) {
-    return true;
-  }
-
-  if (season > 12 && phase >= 2 && phase <= 7) {
-    return true;
-  }
-
-  return false;
-}
-
-main();
+fetchAndUpdateDivineFavor();
