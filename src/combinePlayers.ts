@@ -1,7 +1,7 @@
 import Bottleneck from 'bottleneck';
 import chunk from 'lodash.chunk';
 import { fetchData } from './utils';
-import fs from 'fs';
+import * as fs from 'fs';
 import merge from 'deepmerge';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1000 });

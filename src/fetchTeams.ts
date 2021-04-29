@@ -1,6 +1,6 @@
 import deburr from 'lodash.deburr';
 import { fetchData } from './utils';
-import fs from 'fs';
+import * as fs from 'fs';
 
 async function fetchTeamsFromBlaseballAPI() {
   const allTeams = await fetchData('https://blaseball.com/database/allTeams');

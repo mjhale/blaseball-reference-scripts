@@ -1,5 +1,5 @@
 import { fetchData } from './utils';
-import fs from 'fs';
+import * as fs from 'fs';
 
 async function fetchTeamsFromDatablase() {
   const teams = await fetchData('https://api.blaseball-reference.com/v2/teams');

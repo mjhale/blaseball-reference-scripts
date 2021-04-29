@@ -1,5 +1,5 @@
 import deburr from 'lodash.deburr';
-import fs from 'fs';
+import * as fs from 'fs';
 
 // Type definitions
 interface Player {

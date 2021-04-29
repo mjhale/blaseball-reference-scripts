@@ -1,4 +1,4 @@
-import fs from 'fs';
+import * as fs from 'fs';
 
 // Regex for grabbing shortnames from Wiki source
 // \| \{\{TeamEmojiSelector\|(.*)\}\}

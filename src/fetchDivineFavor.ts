@@ -1,6 +1,6 @@
 import Bottleneck from 'bottleneck';
 import { fetchData } from './utils';
-import fs from 'fs';
+import * as fs from 'fs';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
 

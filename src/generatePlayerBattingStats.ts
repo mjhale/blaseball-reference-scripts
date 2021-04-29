@@ -4,7 +4,7 @@
  * - Tailored to blaseball-reference frontend usage
  * - @WIP
  */
-import fs from 'fs';
+import * as fs from 'fs';
 import ndjson from 'ndjson';
 import dotenv from 'dotenv';
 import { fetchData } from './utils';

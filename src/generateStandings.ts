@@ -1,7 +1,7 @@
 import Bottleneck from 'bottleneck';
 import { fetchData } from './utils';
 import fetchGameResults from './fetchGameResults';
-import fs from 'fs';
+import * as fs from 'fs';
 import merge from 'deepmerge';
 
 const limiter = new Bottleneck({ maxConcurrent: 1, minTime: 250 });
@@ -845,9 +845,7 @@ function createTeamRecord(initialValues: any): TeamRecord {
   return Object.assign({}, defaults, initialValues);
 }
 
-async function fetchSubleaguesAndDivisions(): Promise<
-  SubleaguesAndDivisionsBySeason
-> {
+async function fetchSubleaguesAndDivisions(): Promise<SubleaguesAndDivisionsBySeason> {
   let hasCachedResponse;
   let mostRecentCachedSeason;
   let response;

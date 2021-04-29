@@ -1,6 +1,6 @@
 import cloneDeep from 'lodash.clonedeep';
 import fetchGameResults from './fetchGameResults';
-import fs from 'fs';
+import * as fs from 'fs';
 import merge from 'deepmerge';
 
 async function generateSchedules() {
