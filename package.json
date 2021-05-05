@@ -1,17 +1,17 @@
 {
-  "name": "blaseball-scripts",
-  "version": "1.0.0",
+  "name": "blaseball-reference-scripts",
+  "version": "2.0.0",
   "description": "",
   "author": "Michael Hale <mail@michaelhale.xyz>",
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "@adobe/node-fetch-retry": "^1.1.0",
+    "@adobe/node-fetch-retry": "^1.1.1",
     "@types/ndjson": "^2.0.0",
-    "@types/node": "^14.14.37",
+    "@types/node": "^15.0.2",
     "bottleneck": "^2.19.5",
     "deepmerge": "^4.2.2",
-    "dotenv": "^8.2.0",
+    "dotenv": "^8.4.0",
     "lodash.chunk": "^4.2.0",
     "lodash.clonedeep": "^4.5.0",
     "lodash.deburr": "^4.1.0",
@@ -21,13 +21,13 @@
   },
   "devDependencies": {
     "@tsconfig/node12": "^1.0.7",
-    "@typescript-eslint/eslint-plugin": "^4.20.0",
-    "@typescript-eslint/parser": "^4.20.0",
-    "eslint": "^7.23.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-prettier": "^3.3.1",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
+    "eslint": "^7.25.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
     "prettier": "^2.2.1",
-    "typescript": "^4.2.3"
+    "typescript": "^4.2.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
