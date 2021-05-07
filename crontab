@@ -1,1 +1,2 @@
 20,50 * * * * cd /usr/src/app && /bin/bash -c "/usr/src/app/update-json.sh" >> /usr/src/app/blaseball-scripts.log 2>&1
+#

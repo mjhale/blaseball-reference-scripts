@@ -28,4 +28,5 @@ RUN chmod +x update-json.sh
 
 # Add cron task for update script
 COPY crontab /etc/cron.d/blaseball-cron
+RUN crontab /etc/cron.d/blaseball-cron
 CMD ["cron", "-f"]
