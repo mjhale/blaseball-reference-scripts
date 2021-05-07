@@ -1,2 +1,3 @@
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
 20,50 * * * * cd /usr/src/app && /bin/bash -c "/usr/src/app/update-json.sh" >> /usr/src/app/blaseball-scripts.log 2>&1
-#
