@@ -15,14 +15,15 @@ RUN apt-get update && apt-get install -y \
     && rm awscliv2.zip
 
 # Add SSH credentials
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+RUN mkdir -p -m 0600 ~/.ssh \
+    && ssh-keyscan github.com >> ~/.ssh/known_hosts \
+    && chown -R root:root ~/.ssh
 
 # Clone app source
-RUN --mount=type=ssh,id=github git clone git@github.com:mjhale/blaseball-reference-scripts.git /usr/src/app
+RUN --mount=type=secret,id=ssh_key GIT_SSH_COMMAND="ssh -i /run/secrets/ssh_key" git clone git@github.com:mjhale/blaseball-reference-scripts.git /usr/src/app
 
 # Create app directory
 WORKDIR /usr/src/app
-
 RUN chmod +x update-json.sh
 
 # Add cron task for update script
