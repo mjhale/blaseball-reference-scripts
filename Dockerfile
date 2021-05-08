@@ -1,18 +1,15 @@
 FROM node:16-buster
 
-# @TODO: Detect arch and install correct awscli
-# x86 installer: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
-# arm installer: https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip
-
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
     cron \
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip \
     && ./aws/install -i /usr/local/aws-cli -b /usr/local/bin \
-    && rm awscliv2.zip
+    && rm awscliv2.zip \
+    && rm -rf aws
 
 # Add SSH credentials
 RUN mkdir -p -m 0600 ~/.ssh \
