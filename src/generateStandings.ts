@@ -467,7 +467,7 @@ async function generateStandings() {
             winningTeamRecords.weatherRecords[
               game.weather
             ] = createSplitRecordObject({
-              type: getWeather()[game.weather].name || '',
+              type: getWeather()[game.weather]?.name ?? '',
             });
           }
 
@@ -480,7 +480,7 @@ async function generateStandings() {
             losingTeamRecords.weatherRecords[
               game.weather
             ] = createSplitRecordObject({
-              type: getWeather()[game.weather].name || '',
+              type: getWeather()[game.weather]?.name ?? '',
             });
           }
 
@@ -835,6 +835,7 @@ function createTeamRecord(initialValues: any): TeamRecord {
     clinched: false,
     eliminationNumber: '',
     magicNumber: '',
+    winObjects: 0,
     wins: 0,
     losses: 0,
     runDifferential: 0,
@@ -1035,13 +1036,28 @@ function getWeather() {
       name: 'Salmon',
     },
     {
-      name: '???',
+      name: 'Polarity +',
+    },
+    {
+      name: 'Polarity -',
     },
     {
       name: '???',
     },
     {
-      name: '???',
+      name: 'Sun 90',
+    },
+    {
+      name: 'Sun .1',
+    },
+    {
+      name: 'Sun Sun',
+    },
+    {
+      name: 'Jazz',
+    },
+    {
+      name: 'Night',
     },
   ];
 }
