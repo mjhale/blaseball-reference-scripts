@@ -1051,7 +1051,13 @@ function getWeather() {
       name: 'Sun .1',
     },
     {
-      name: 'Sun Sun',
+      name: 'Sum Sun',
+    },
+    {
+      name: '???',
+    },
+    {
+      name: '???',
     },
     {
       name: 'Jazz',
