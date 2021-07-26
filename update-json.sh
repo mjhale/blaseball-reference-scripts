@@ -25,9 +25,6 @@ node dist/fetchTeamsFromDatablase.js
 echo "Generating standing tables..."
 node dist/generateStandings.js
 
-echo "Generating schedule files..."
-node dist/generateSchedules.js
-
 echo "Updating divine favor..."
 node dist/fetchDivineFavor.js
 

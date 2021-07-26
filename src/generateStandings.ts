@@ -1054,7 +1054,7 @@ function getWeather() {
       name: 'Sum Sun',
     },
     {
-      name: '???',
+      name: 'Supernova Eclipse',
     },
     {
       name: '???',
